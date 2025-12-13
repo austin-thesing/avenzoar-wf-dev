@@ -1,0 +1,74 @@
+---
+description: Project-wide typography rule — use Raleway and Merriweather Sans with inline styles; no Tailwind font utilities or next/font.
+globs:
+  - "**/*.{tsx,jsx}"
+  - "**/*.{ts,js}"
+  - "**/*.{css,scss}"
+alwaysApply: true
+---
+
+## Typography Standard
+
+- **Primary Sans (`--font-sans`)**: Raleway, fallbacks to system sans.
+- **Headings (`--font-heading`)**: Merriweather Sans, then Raleway, then system sans.
+- **Loading**: Fonts are loaded by the Webflow site. Do NOT bundle fonts or use `next/font`.
+- **Approach**: Prefer inline styles for typography in components (no Tailwind utilities for fonts).
+
+## CSS Variables (must exist in app/globals.css)
+
+```css
+:root {
+  --font-sans: "Raleway", Arial, Helvetica, sans-serif;
+  --font-heading: "Merriweather Sans", "Raleway", Arial, Helvetica, sans-serif;
+}
+
+body { font-family: var(--font-sans); }
+```
+
+## Component Guidance
+
+- **Headings/labels** (section titles, caps): `fontFamily: 'var(--font-heading), "Merriweather Sans", "Raleway", Arial, Helvetica, sans-serif'`
+- **Body copy**: `fontFamily: 'var(--font-sans), "Raleway", Arial, Helvetica, sans-serif'`
+- Set sizes, weights, tracking, and casing explicitly via inline styles for visual fidelity with Figma/Webflow.
+- Let background/stars/gradients be provided by the parent Webflow section; components should be background‑transparent by default.
+
+### Examples
+
+```tsx
+// Heading
+<h2
+  style={{
+    fontFamily: 'var(--font-heading), "Merriweather Sans", "Raleway", Arial, Helvetica, sans-serif',
+    fontSize: 14,
+    letterSpacing: "3.5px",
+    textTransform: "uppercase",
+    margin: 0,
+  }}
+>
+  KEY ACCOMPLISHMENTS
+ </h2>
+
+// Body text
+<p
+  style={{
+    fontFamily: 'var(--font-sans), "Raleway", Arial, Helvetica, sans-serif',
+    fontSize: 20,
+    lineHeight: 1.45,
+    margin: 0,
+  }}
+>
+  Example body copy...
+</p>
+```
+
+## Prohibited
+
+- Tailwind font utilities (e.g. `font-sans`, `font-serif`) in components.
+- `next/font` and any runtime font loaders.
+- Adding alternate font families without explicit approval.
+
+## Notes
+
+- In local preview outside Webflow, if fonts are not loaded, fallbacks will render; this is expected.
+- When in doubt, prefer variables (`var(--font-sans)`, `var(--font-heading)`) over literal names.
+
