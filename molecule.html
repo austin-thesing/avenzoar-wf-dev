@@ -65,15 +65,15 @@
         } catch (_) {}
       }
 
-      // bonds
-      viewer.setStyle({}, { stick: { radius: 0.11, color: "#666666" } });
+      // bonds (muted purple)
+      viewer.setStyle({}, { stick: { radius: 0.11, color: "#5a4a7a" } });
 
-      // atoms (greyscale)
+      // atoms (purple tones to blend with background)
       if (viewer.addStyle) {
-        viewer.addStyle({ elem: "C" }, { sphere: { scale: 0.24, color: "#333333" } });
-        viewer.addStyle({ elem: "O" }, { sphere: { scale: 0.26, color: "#777777" } });
-        viewer.addStyle({ elem: "N" }, { sphere: { scale: 0.26, color: "#999999" } });
-        viewer.addStyle({ elem: "H" }, { sphere: { scale: 0.18, color: "#BBBBBB" } });
+        viewer.addStyle({ elem: "C" }, { sphere: { scale: 0.24, color: "#3d2d5c" } });
+        viewer.addStyle({ elem: "O" }, { sphere: { scale: 0.26, color: "#5a4a7a" } });
+        viewer.addStyle({ elem: "N" }, { sphere: { scale: 0.26, color: "#6b5a8a" } });
+        viewer.addStyle({ elem: "H" }, { sphere: { scale: 0.18, color: "#7a6a9a" } });
       }
 
       // initial fit & zoom

@@ -1,0 +1,197 @@
+<style>
+  .dna-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .dna-canvas.loaded {
+    opacity: 1;
+  }
+</style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+</script>
+<script type="module">
+  import * as THREE from "three";
+
+  // Configuration
+  const CONFIG = {
+    // Helix geometry
+    radius: 1.2,           // Helix radius
+    height: 20,            // Total helix height
+    turns: 5,              // Number of complete rotations
+    pointsPerTurn: 40,     // Smoothness of curves
+    rungsPerTurn: 10,      // Connecting rungs per turn
+    
+    // Visual style
+    strandColor: 0xb4b9d2,
+    strandOpacity: 0.7,
+    rungColor: 0xb4b9d2,
+    rungOpacity: 0.4,
+    
+    // Animation
+    rotationSpeed: 0.08,   // Y-axis rotation speed
+    scrollSpeed: 0.15,     // Vertical scroll speed
+    
+    // Camera
+    cameraZ: 8,
+    positionX: 1.5,        // Offset right of center
+  };
+
+  const THEME = {
+    strand: CONFIG.strandColor,
+    rung: CONFIG.rungColor,
+    bg: 0x0d1126,
+  };
+
+  // Setup
+  const canvas = document.createElement("canvas");
+  canvas.classList.add("dna-canvas");
+  document.body.appendChild(canvas);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(THEME.bg, 1);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(CONFIG.positionX, 0, CONFIG.cameraZ);
+  camera.lookAt(CONFIG.positionX, 0, 0);
+
+  function resize() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // Create helix strands using CatmullRomCurve3 for smooth curves
+  function createHelixCurve(phaseOffset = 0) {
+    const points = [];
+    const totalPoints = CONFIG.turns * CONFIG.pointsPerTurn;
+    
+    for (let i = 0; i <= totalPoints; i++) {
+      const t = i / CONFIG.pointsPerTurn;
+      const angle = t * Math.PI * 2 + phaseOffset;
+      const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
+      
+      points.push(new THREE.Vector3(
+        Math.cos(angle) * CONFIG.radius,
+        y,
+        Math.sin(angle) * CONFIG.radius
+      ));
+    }
+    
+    return new THREE.CatmullRomCurve3(points);
+  }
+
+  // Create strand geometry from curve
+  function createStrandLine(curve) {
+    const points = curve.getPoints(CONFIG.turns * CONFIG.pointsPerTurn);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color: THEME.strand,
+      transparent: true,
+      opacity: CONFIG.strandOpacity,
+    });
+    return new THREE.Line(geometry, material);
+  }
+
+  // Create connecting rungs
+  function createRungs() {
+    const rungGroup = new THREE.Group();
+    const totalRungs = CONFIG.turns * CONFIG.rungsPerTurn;
+    
+    for (let i = 0; i <= totalRungs; i++) {
+      const t = i / CONFIG.rungsPerTurn;
+      const angle = t * Math.PI * 2;
+      const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
+      
+      // Points on each strand
+      const p1 = new THREE.Vector3(
+        Math.cos(angle) * CONFIG.radius,
+        y,
+        Math.sin(angle) * CONFIG.radius
+      );
+      const p2 = new THREE.Vector3(
+        Math.cos(angle + Math.PI) * CONFIG.radius,
+        y,
+        Math.sin(angle + Math.PI) * CONFIG.radius
+      );
+      
+      const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      const material = new THREE.LineBasicMaterial({
+        color: THEME.rung,
+        transparent: true,
+        opacity: CONFIG.rungOpacity,
+      });
+      const line = new THREE.Line(geometry, material);
+      rungGroup.add(line);
+    }
+    
+    return rungGroup;
+  }
+
+  // Build the helix group
+  const helixGroup = new THREE.Group();
+
+  // Two strands offset by PI (180°)
+  const strand1 = createStrandLine(createHelixCurve(0));
+  const strand2 = createStrandLine(createHelixCurve(Math.PI));
+  helixGroup.add(strand1);
+  helixGroup.add(strand2);
+
+  // Add rungs
+  const rungs = createRungs();
+  helixGroup.add(rungs);
+
+  // Clone for seamless vertical loop
+  const helixClone = helixGroup.clone();
+  helixClone.position.y = CONFIG.height;
+
+  const masterGroup = new THREE.Group();
+  masterGroup.add(helixGroup);
+  masterGroup.add(helixClone);
+  masterGroup.position.x = CONFIG.positionX;
+
+  scene.add(masterGroup);
+
+  // Animation
+  let isLoaded = false;
+  let scrollOffset = 0;
+
+  function animate() {
+    if (!isLoaded) {
+      canvas.classList.add("loaded");
+      isLoaded = true;
+    }
+
+    // Rotate on Y-axis
+    masterGroup.rotation.y += CONFIG.rotationSpeed * 0.016; // ~60fps normalized
+
+    // Scroll vertically for seamless loop
+    scrollOffset += CONFIG.scrollSpeed * 0.016;
+    if (scrollOffset >= CONFIG.height) {
+      scrollOffset -= CONFIG.height;
+    }
+    masterGroup.position.y = -scrollOffset + CONFIG.height / 2;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
