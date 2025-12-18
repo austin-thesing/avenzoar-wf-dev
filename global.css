@@ -249,9 +249,11 @@ body {
 .navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-top,
 .navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-middle,
 .navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-bottom,
+.navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-middle-base,
 .navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-top,
 .navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-middle,
-.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-bottom {
+.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-bottom,
+.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-middle-base {
   background-color: #1a1a1a;
 }
 
@@ -284,7 +286,8 @@ body {
 
 .navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-top,
 .navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-middle,
-.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-bottom {
+.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-bottom,
+.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-middle-base {
   background-color: #ffffff;
 }
 

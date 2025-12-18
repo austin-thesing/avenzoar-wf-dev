@@ -160,19 +160,28 @@
             }
           }, 100);
         } else {
-          // Show logo elements based on theme
-          if (logoIcon) gsap.set(logoIcon, { opacity: 1 });
-          if (isLightTheme) {
-            if (lightLogo) gsap.set(lightLogo, { opacity: 1 });
-            if (darkLogo) gsap.set(darkLogo, { opacity: 0 });
-          } else {
-            if (darkLogo) gsap.set(darkLogo, { opacity: 1 });
-            if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
-          }
-
           // Restore background and colors based on scroll position and theme
           const scrollY = window.scrollY;
           const progress = Math.min(scrollY / CONFIG.scrollDistance, 1);
+
+          // Show logo elements based on theme AND scroll position
+          if (logoIcon) gsap.set(logoIcon, { opacity: 1 });
+          if (isLightTheme) {
+            // For light theme, show appropriate logo based on scroll position
+            if (progress >= 1) {
+              // Fully scrolled - show dark logo
+              if (darkLogo) gsap.set(darkLogo, { opacity: 1 });
+              if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
+            } else {
+              // Not fully scrolled - show logos based on progress
+              if (lightLogo) gsap.set(lightLogo, { opacity: 1 - progress });
+              if (darkLogo) gsap.set(darkLogo, { opacity: progress });
+            }
+          } else {
+            // Dark theme always shows dark logo
+            if (darkLogo) gsap.set(darkLogo, { opacity: 1 });
+            if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
+          }
 
           // Restore background color based on scroll position
           const bgOpacity = progress;
@@ -272,6 +281,11 @@
       if (menuIconLineWrappers.length > 0) {
         gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
       }
+
+      // Set menu icon middle base to white
+      if (menuIconMiddleBase) {
+        gsap.set(menuIconMiddleBase, { backgroundColor: "#ffffff" });
+      }
     } else {
       // Dark theme: dark text/icons for light hero backgrounds
       // Show dark logo (higher z-index), hide light logo
@@ -301,6 +315,11 @@
       // Set menu icon line wrappers to transparent
       if (menuIconLineWrappers.length > 0) {
         gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+      }
+
+      // Set menu icon middle base to dark
+      if (menuIconMiddleBase) {
+        gsap.set(menuIconMiddleBase, { backgroundColor: "#1a1a1a" });
       }
     }
 
@@ -404,6 +423,20 @@
     if (isLightTheme && menuIconLineWrappers.length > 0) {
       gsap.to(menuIconLineWrappers, {
         backgroundColor: "transparent", // Stay transparent
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: `${CONFIG.scrollDistance}px top`,
+          scrub: true,
+        },
+        ease: "none",
+      });
+    }
+
+    // Handle menu icon middle base color change on scroll for light theme
+    if (isLightTheme && menuIconMiddleBase) {
+      gsap.to(menuIconMiddleBase, {
+        backgroundColor: "#1a1a1a", // Fade from white to dark
         scrollTrigger: {
           trigger: "body",
           start: "top top",
