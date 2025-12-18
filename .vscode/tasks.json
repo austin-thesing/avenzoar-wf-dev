@@ -25,7 +25,8 @@
       },
       "runOptions": {
         "runOn": "folderOpen"
-      }
+      },
+      "//": "Watches and rebuilds HTML, JS, and CSS files (including minified CSS output)"
     }
   ]
 }

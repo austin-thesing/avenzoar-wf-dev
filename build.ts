@@ -132,14 +132,19 @@ async function build(): Promise<void> {
     }
   }
   
-  // Process JS files from src/
+  // Process JS and CSS files from src/
   const srcFiles = await readdir(SRC_DIR);
   for (const file of srcFiles) {
     const filePath = join(SRC_DIR, file);
     const stats = await stat(filePath);
     
-    if (stats.isFile() && extname(file).toLowerCase() === ".js") {
-      await processJSFile(filePath, join(DIST_DIR, SRC_DIR, file));
+    if (stats.isFile()) {
+      const ext = extname(file).toLowerCase();
+      if (ext === ".js") {
+        await processJSFile(filePath, join(DIST_DIR, SRC_DIR, file));
+      } else if (ext === ".css") {
+        await processCSSFile(filePath, join(DIST_DIR, SRC_DIR, file));
+      }
     }
   }
   

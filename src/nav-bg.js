@@ -59,7 +59,7 @@
     menuButtonSelector: ".w-nav-button", // Mobile menu button
     navLinksSelector: ".navbar16_nav-link", // Desktop nav links
     menuIconTextSelector: ".menu-icon4_text", // Menu icon text
-    menuIconLinesSelector: ".menu-icon4_line-top, .menu-icon4_line-middle-top, .menu-icon4_line-middle-base, .menu-icon4_line-bottom", // Menu icon lines
+    menuIconLinesSelector: ".menu-icon4_line-top, .menu-icon4_line-middle, .menu-icon4_line-bottom", // Menu icon lines (parent elements)
   };
 
   // Wait for DOM and GSAP to be ready
@@ -91,12 +91,6 @@
     const theme = navbar.getAttribute("data-theme") || "dark";
     const isLightTheme = theme === "light";
 
-    // Set z-index on menu icon text to ensure it's always on top
-    if (menuIconText) {
-      menuIconText.style.position = "relative";
-      menuIconText.style.zIndex = "9999";
-    }
-
     // Store original menu text
     const originalMenuText = menuIconText ? menuIconText.textContent : "";
 
@@ -115,6 +109,11 @@
         // Always show dark text and lines when menu is open
         // Use a slight delay to avoid conflicting with Webflow's animation
         if (isMenuOpen) {
+          // Hide logo elements
+          if (logoIcon) gsap.set(logoIcon, { opacity: 0, display: "none" });
+          if (darkLogo) gsap.set(darkLogo, { opacity: 0, display: "none" });
+          if (lightLogo) gsap.set(lightLogo, { opacity: 0, display: "none" });
+          
           setTimeout(() => {
             if (menuIconText) {
               gsap.set(menuIconText, { color: "#1a1a1a" });
@@ -124,6 +123,16 @@
             }
           }, 100);
         } else {
+          // Show logo elements based on theme
+          if (logoIcon) gsap.set(logoIcon, { opacity: 1, display: "block" });
+          if (isLightTheme) {
+            if (lightLogo) gsap.set(lightLogo, { opacity: 1, display: "block" });
+            if (darkLogo) gsap.set(darkLogo, { opacity: 0, display: "none" });
+          } else {
+            if (darkLogo) gsap.set(darkLogo, { opacity: 1, display: "block" });
+            if (lightLogo) gsap.set(lightLogo, { opacity: 0, display: "none" });
+          }
+          
           // Restore based on scroll position and theme
           const scrollY = window.scrollY;
           if (isLightTheme && scrollY < CONFIG.scrollDistance) {
@@ -231,7 +240,7 @@
         },
         ease: "none",
         onComplete: () => {
-          gsap.set(lightLogo, { display: "none" });
+          gsap.set(lightLogo, { opacity: 0, display: "none" });
         },
       });
 
