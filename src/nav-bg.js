@@ -5,7 +5,7 @@
  *
  * 1. DARK THEME (default) - for pages with light hero sections:
  *    - Background: transparent → white on scroll
- *    - Logo icon (.avenzoar-logo-icon): dark color (stays dark)
+ *    - Logo icon (.avenzoar-logo-icon): purple #5b3399 (stays purple)
  *    - Logo text (.logo-type): dark version visible
  *    - Menu icon text (.menu-icon4_text): dark color (stays dark)
  *    - Menu icon lines (.menu-icon4_line-*): dark background (stays dark)
@@ -13,11 +13,17 @@
  *
  * 2. LIGHT THEME - for pages with dark hero sections:
  *    - Background: transparent → solid white on scroll
- *    - Logo icon (.avenzoar-logo-icon): white → dark on scroll
+ *    - Logo icon (.avenzoar-logo-icon): white → purple #5b3399 on scroll
  *    - Logo text (.logo-type): light version → dark version crossfade on scroll
  *    - Menu icon text (.menu-icon4_text): white → dark on scroll
  *    - Menu icon lines (.menu-icon4_line-*): white background → dark on scroll
  *    - Nav links (.navbar16_nav-link): white → dark on scroll
+ *
+ * 3. MENU OPEN STATE (both themes):
+ *    - Background: transparent (regardless of scroll position)
+ *    - All text and icons: white (light theme colors)
+ *    - Logo icon: visible, white color
+ *    - Logo text: light version visible (white)
  *
  * Usage in Webflow:
  *
@@ -52,7 +58,7 @@
 
   // Configuration
   const CONFIG = {
-    scrollDistance: 100, // Distance in pixels to complete the fade
+    scrollDistance: 200, // Distance in pixels to complete the fade
     darkLogoSelector: ".logo-type.logo-dark",
     lightLogoSelector: ".logo-type.logo-light",
     logoIconSelector: ".avenzoar-logo-icon", // Animated logo mark
@@ -61,6 +67,7 @@
     menuIconTextSelector: ".menu-icon4_text", // Menu icon text
     menuIconLinesSelector: ".menu-icon4_line-top, .menu-icon4_line-middle, .menu-icon4_line-bottom", // Menu icon lines (parent elements)
     menuIconLineWrappersSelector: ".menu-icon4_line-top-wrapper, .menu-icon4_line-middle-wrapper, .menu-icon4_line-bottom-wrapper", // Menu icon line wrappers
+    menuIconMiddleBaseSelector: ".menu-icon4_line-middle-base", // Menu icon middle base line
   };
 
   // Wait for DOM and GSAP to be ready
@@ -88,6 +95,7 @@
     const menuIconText = navbar.querySelector(CONFIG.menuIconTextSelector);
     const menuIconLines = navbar.querySelectorAll(CONFIG.menuIconLinesSelector);
     const menuIconLineWrappers = navbar.querySelectorAll(CONFIG.menuIconLineWrappersSelector);
+    const menuIconMiddleBase = navbar.querySelector(CONFIG.menuIconMiddleBaseSelector);
 
     // Determine theme from data attribute
     const theme = navbar.getAttribute("data-theme") || "dark";
@@ -99,7 +107,7 @@
         darkLogo: CONFIG.darkLogoSelector,
         lightLogo: CONFIG.lightLogoSelector,
         foundDark: !!darkLogo,
-        foundLight: !!lightLogo
+        foundLight: !!lightLogo,
       });
       console.warn("Logo text will not be visible. Please add both logo images to the navbar.");
     }
@@ -119,23 +127,36 @@
           menuIconText.textContent = isMenuOpen ? "CLOSE" : originalMenuText;
         }
 
-        // Always show dark text and lines when menu is open
+        // When menu is open: use light theme colors (white) with transparent background
         // Use a slight delay to avoid conflicting with Webflow's animation
         if (isMenuOpen) {
-          // Hide logo elements
-          if (logoIcon) gsap.set(logoIcon, { opacity: 0 });
+          // Show logo elements with white color
+          if (logoIcon) {
+            gsap.set(logoIcon, { opacity: 1, color: "#ffffff" });
+          }
+          // Show light logo (white version)
+          if (lightLogo) gsap.set(lightLogo, { opacity: 1 });
           if (darkLogo) gsap.set(darkLogo, { opacity: 0 });
-          if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
-          
+
+          // Set background to transparent
+          navbar.style.setProperty("background-color", "rgba(255, 255, 255, 0)", "important");
+
           setTimeout(() => {
+            // Use light theme colors (white) when menu is open
             if (menuIconText) {
-              gsap.set(menuIconText, { color: "#1a1a1a" });
+              gsap.set(menuIconText, { color: "#ffffff" });
             }
             if (menuIconLines.length > 0) {
-              gsap.set(menuIconLines, { backgroundColor: "#1a1a1a" });
+              gsap.set(menuIconLines, { backgroundColor: "#ffffff" });
             }
             if (menuIconLineWrappers.length > 0) {
               gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+            }
+            if (menuIconMiddleBase) {
+              gsap.set(menuIconMiddleBase, { backgroundColor: "#ffffff" });
+            }
+            if (navLinks.length > 0) {
+              gsap.set(navLinks, { color: "#ffffff" });
             }
           }, 100);
         } else {
@@ -148,16 +169,28 @@
             if (darkLogo) gsap.set(darkLogo, { opacity: 1 });
             if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
           }
-          
-          // Restore based on scroll position and theme
+
+          // Restore background and colors based on scroll position and theme
           const scrollY = window.scrollY;
+          const progress = Math.min(scrollY / CONFIG.scrollDistance, 1);
+
+          // Restore background color based on scroll position
+          const bgOpacity = progress;
+          navbar.style.setProperty("background-color", `rgba(255, 255, 255, ${bgOpacity})`, "important");
+
           if (isLightTheme && scrollY < CONFIG.scrollDistance) {
-            // Calculate color based on scroll position
-            const progress = scrollY / CONFIG.scrollDistance;
+            // Calculate color based on scroll position (white to dark for menu/nav, white to purple for logo icon)
             const r = Math.round(255 - (255 - 26) * progress);
             const g = Math.round(255 - (255 - 26) * progress);
             const b = Math.round(255 - (255 - 26) * progress);
 
+            // Restore logo icon color based on scroll position (white to purple #5b3399)
+            if (logoIcon) {
+              const logoR = Math.round(255 - (255 - 91) * progress); // 255 -> 91 (0x5b)
+              const logoG = Math.round(255 - (255 - 51) * progress); // 255 -> 51 (0x33)
+              const logoB = Math.round(255 - (255 - 153) * progress); // 255 -> 153 (0x99)
+              gsap.set(logoIcon, { color: `rgb(${logoR}, ${logoG}, ${logoB})` });
+            }
             if (menuIconText) {
               gsap.set(menuIconText, { color: `rgb(${r}, ${g}, ${b})` });
             }
@@ -167,7 +200,18 @@
             if (menuIconLineWrappers.length > 0) {
               gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
             }
+            if (menuIconMiddleBase) {
+              gsap.set(menuIconMiddleBase, { backgroundColor: `rgb(${r}, ${g}, ${b})` });
+            }
+            if (navLinks.length > 0) {
+              gsap.set(navLinks, { color: `rgb(${r}, ${g}, ${b})` });
+            }
           } else {
+            // Fully scrolled or dark theme - use appropriate colors
+            if (logoIcon) {
+              // Use purple for both themes when scrolled
+              gsap.set(logoIcon, { color: "#5b3399" });
+            }
             if (menuIconText) {
               gsap.set(menuIconText, { color: "#1a1a1a" });
             }
@@ -176,6 +220,12 @@
             }
             if (menuIconLineWrappers.length > 0) {
               gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+            }
+            if (menuIconMiddleBase) {
+              gsap.set(menuIconMiddleBase, { backgroundColor: "#1a1a1a" });
+            }
+            if (navLinks.length > 0) {
+              gsap.set(navLinks, { color: "#1a1a1a" });
             }
           }
         }
@@ -232,8 +282,8 @@
         gsap.set(lightLogo, { opacity: 0 });
       }
 
-      // Set logo icon to dark color for dark theme
-      if (logoIcon) gsap.set(logoIcon, { color: "#1a1a1a" });
+      // Set logo icon to purple color for dark theme
+      if (logoIcon) gsap.set(logoIcon, { color: "#5b3399" });
 
       // Set nav links to dark for dark theme
       if (navLinks.length > 0) {
@@ -297,7 +347,7 @@
     // Handle logo icon color change on scroll for light theme
     if (isLightTheme && logoIcon) {
       gsap.to(logoIcon, {
-        color: "#1a1a1a", // Fade from white to dark
+        color: "#5b3399", // Fade from white to purple
         scrollTrigger: {
           trigger: "body",
           start: "top top",

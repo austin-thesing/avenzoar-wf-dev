@@ -323,13 +323,26 @@ body {
   opacity: 0;
 }
 
-/* Logo icon should be visible by default */
+/* Logo icon should be hidden initially for animation */
 .avenzoar-logo-icon {
-  opacity: 1;
+  opacity: 0;
   display: block;
+  transform: scale(0.8);
 }
 
 /* Hide logo icon paths before JS animation kicks in */
 .avenzoar-logo-icon path {
   opacity: 0;
 }
+
+/* Logo type wrapper starts shifted left (will be animated right) 
+   NOTE: Set this transform in Webflow Designer instead:
+   - Select .logo-type-wrapper
+   - Effects → Transform → Move X: -52px
+   Or uncomment below if you prefer CSS: */
+/*
+.logo-type-wrapper {
+  transform: translateX(-52px);
+  transition: none;
+}
+*/

@@ -17,11 +17,6 @@ function initLogoAnimation() {
     document.querySelector(".logo-type-wrapper") || 
     logoIcon.nextElementSibling;
   
-  // Get the icon's natural width for animation
-  const iconWidth = logoIcon.offsetWidth || 40;
-  const iconMargin = 12;
-  const totalShift = iconWidth + iconMargin;
-  
   // Set initial state for paths
   gsap.set(paths, { 
     opacity: 1,
@@ -29,72 +24,60 @@ function initLogoAnimation() {
     fillOpacity: 0,
     stroke: "currentColor"
   });
-  
-  // Set initial state - hide icon and scale down
-  gsap.set(logoIcon, { 
-    opacity: 0,
-    scale: 0.8
-  });
-  
-  // If there's a text wrapper, shift it left initially
-  // This works for both absolute and relative positioning
-  if (logoTextWrapper) {
-    gsap.set(logoTextWrapper, {
-      x: -totalShift
-    });
-  }
 
-  // Create the animation timeline
+  // Create the animation timeline with smoother easing
   const tl = gsap.timeline({ 
-    defaults: { ease: "power2.inOut" },
-    delay: 0.5 // Optional: delay before animation starts
+    defaults: { ease: "power2.out" },
+    delay: 0.3
   });
 
-  // Step 1: Fade in and scale up the icon while pushing text right
-  tl.to(logoIcon, {
-    opacity: 1,
-    scale: 1,
-    duration: 0.4,
-    ease: "power2.out"
-  });
-  
-  // Simultaneously push the text to the right
+  // Step 1: Text slides right first with ultra-smooth easing
+  // The text movement completes BEFORE the icon finishes fading in
   if (logoTextWrapper) {
     tl.to(logoTextWrapper, {
       x: 0,
-      duration: 0.4,
-      ease: "power2.out"
-    }, 0); // Start at the same time as icon fade in
+      duration: 1.6, // Longer, more luxurious slide
+      ease: "power3.out" // Very smooth, gentle deceleration
+    }, 0);
   }
   
-  // Step 2: Draw the SVG paths with stagger (starts slightly before icon fully expands)
+  // Step 2: Icon fades in and scales up quickly with smooth easing
+  tl.to(logoIcon, {
+    opacity: 1,
+    scale: 1,
+    duration: 0.6, // Faster fade in
+    ease: "power1.out" // Gentle but quicker easing
+  }, 0); // Start immediately with text
+  
+  // Step 3: Draw the SVG paths with stagger (starts after icon is visible)
   tl.to(paths, {
     drawSVG: "100%",
-    duration: 0.6,
+    duration: 0.7, // Faster drawing
     stagger: {
-      amount: 0.75,
+      amount: 0.5, // Less stagger for tighter timing
       from: "random",
     },
-  }, "-=0.2")
-    // Step 3: Fade in the fills
+    ease: "power1.inOut"
+  }, 0.5) // Start shortly after icon appears, while text is still settling
+    // Step 4: Fade in the fills gradually while drawing completes
     .to(
       paths,
       {
         fillOpacity: 1,
-        duration: 0.3,
-        ease: "power2.in",
+        duration: 0.6, // Longer, more gradual fill
+        ease: "power1.out", // Smoother easing
       },
-      "-=0.225"
+      "-=0.5" // Start earlier - overlaps more with drawing
     )
-    // Step 4: Fade out the strokes
+    // Step 5: Fade out the strokes smoothly
     .to(
       paths,
       {
         stroke: "transparent",
-        duration: 0.225,
-        ease: "power2.out",
+        duration: 0.4, // Slightly longer
+        ease: "power1.out", // Smoother easing
       },
-      "-=0.15"
+      "-=0.4" // More overlap with fill
     );
 }
 
