@@ -122,7 +122,7 @@
             if (menuIconLines.length > 0) {
               gsap.set(menuIconLines, { backgroundColor: "#1a1a1a" });
             }
-          }, 50);
+          }, 100);
         } else {
           // Restore based on scroll position and theme
           const scrollY = window.scrollY;
