@@ -1,0 +1,212 @@
+<style>
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  /* Wrapper that sits inside .promising-therapy-section .3d-structure */
+  .molecule-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%; /* fill the container */
+    min-height: 320px; /* tweak this to control vertical size */
+    overflow: hidden;
+  }
+
+  #viewer {
+    position: absolute;
+    inset: 0; /* top/right/bottom/left: 0; */
+    width: 100%;
+    height: 100%;
+  }
+</style>
+<!-- For Webflow: you only need everything from <style> down inside an Embed.
+       Place this inside the element with class `3d-structure` inside `.promising-therapy-section`. -->
+<div class="molecule-wrap">
+  <div id="viewer"></div>
+</div>
+
+<script src="https://3dmol.org/build/3Dmol-min.js"></script>
+<script>
+  (function () {
+    const SMILES = "COC1=CC=C(NC2=NN=C(O2)C2=CC=C(C=C2)C(=O)NO)C=C1";
+    const PUBCHEM_3D = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/" + encodeURIComponent(SMILES) + "/SDF?record_type=3d";
+
+    // Transparent background viewer
+    const viewer = $3Dmol.createViewer("viewer", {
+      backgroundColor: "black",
+      backgroundAlpha: 0,
+      antialias: true,
+    });
+
+    let baseView = null;
+
+    // rotation (degrees)
+    let rotX = 0,
+      rotY = 0,
+      rotZ = 0;
+    let targetRotX = 0,
+      targetRotY = 0,
+      targetRotZ = 0;
+
+    // zoom (scroll-driven)
+    const minZoom = 1.2;
+    const maxZoom = 1.8;
+    let currentZoom = minZoom;
+    let targetZoom = minZoom;
+
+    function styleAndRender() {
+      const mdl = viewer.getModel();
+      if (mdl && mdl.addHydrogens) {
+        try {
+          mdl.addHydrogens();
+        } catch (_) {}
+      }
+
+      // bonds
+      viewer.setStyle({}, { stick: { radius: 0.11, color: "#666666" } });
+
+      // atoms (greyscale)
+      if (viewer.addStyle) {
+        viewer.addStyle({ elem: "C" }, { sphere: { scale: 0.24, color: "#333333" } });
+        viewer.addStyle({ elem: "O" }, { sphere: { scale: 0.26, color: "#777777" } });
+        viewer.addStyle({ elem: "N" }, { sphere: { scale: 0.26, color: "#999999" } });
+        viewer.addStyle({ elem: "H" }, { sphere: { scale: 0.18, color: "#BBBBBB" } });
+      }
+
+      // initial fit & zoom
+      viewer.zoomTo();
+      viewer.zoom(minZoom);
+      viewer.render();
+
+      baseView = viewer.getView();
+
+      setupInteractions();
+      setupScrollZoom();
+      disableScrollZoom();
+      startAnimationLoop();
+    }
+
+    function setupInteractions() {
+      const section = document.querySelector(".promising-therapy-section");
+      const wrap = document.querySelector(".molecule-wrap");
+      const hoverTarget = section || wrap;
+      if (!hoverTarget) return;
+
+      hoverTarget.addEventListener("mousemove", function (e) {
+        const rect = hoverTarget.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5..0.5
+        const y = (e.clientY - rect.top) / rect.height - 0.5; // -0.5..0.5
+
+        const maxAngleDeg = 25; // stronger movement
+
+        // Yaw (left-right)
+        targetRotY = x * maxAngleDeg;
+
+        // Pitch (up-down)
+        targetRotX = -y * maxAngleDeg;
+
+        // Roll (twist) – subtle diagonal-based rotation
+        targetRotZ = (x + y) * (maxAngleDeg * 0.5);
+      });
+
+      hoverTarget.addEventListener("mouseleave", function () {
+        targetRotX = 0;
+        targetRotY = 0;
+        targetRotZ = 0;
+      });
+    }
+
+    function setupScrollZoom() {
+      const section = document.querySelector(".promising-therapy-section") || document.querySelector(".molecule-wrap");
+      if (!section || !("IntersectionObserver" in window)) return;
+
+      const thresholds = [0, 0.1, 0.25, 0.5, 0.75, 1];
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const ratio = entry.intersectionRatio; // 0..1 visible
+
+            if (entry.isIntersecting) {
+              // 1.2 → 1.8 as section goes from out-of-view to fully in-view
+              targetZoom = minZoom + ratio * (maxZoom - minZoom);
+            } else {
+              // When section is out of view, gently go back to 1.2
+              targetZoom = minZoom;
+            }
+          });
+        },
+        { threshold: thresholds }
+      );
+
+      observer.observe(section);
+    }
+
+    function disableScrollZoom() {
+      // Disable 3Dmol's own wheel zoom but keep page scroll working
+      const canvas = viewer.getCanvas ? viewer.getCanvas() : document.querySelector("#viewer canvas");
+      if (!canvas) return;
+
+      canvas.addEventListener(
+        "wheel",
+        function (e) {
+          e.stopImmediatePropagation(); // blocks 3Dmol handler only
+        },
+        { capture: true }
+      );
+    }
+
+    function startAnimationLoop() {
+      if (!baseView) return;
+
+      function frame() {
+        // smaller lerp = smoother, slower easing
+        const lerpRot = 0.03; // rotation smoothing
+        const lerpZoom = 0.03; // zoom smoothing
+
+        // ease rotation
+        rotX += (targetRotX - rotX) * lerpRot;
+        rotY += (targetRotY - rotY) * lerpRot;
+        rotZ += (targetRotZ - rotZ) * lerpRot;
+
+        // ease zoom
+        currentZoom += (targetZoom - currentZoom) * lerpZoom;
+
+        // reset camera, apply zoom then rotations
+        viewer.setView(baseView);
+        viewer.zoom(currentZoom);
+
+        if (rotY !== 0) viewer.rotate(rotY, { x: 0, y: 1, z: 0 }); // yaw
+        if (rotX !== 0) viewer.rotate(rotX, { x: 1, y: 0, z: 0 }); // pitch
+        if (rotZ !== 0) viewer.rotate(rotZ, { x: 0, y: 0, z: 1 }); // roll
+
+        viewer.render();
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    // Load structure: PubChem 3D, then SMILES fallback
+    fetch(PUBCHEM_3D)
+      .then(function (r) {
+        if (!r.ok) throw new Error("No PubChem 3D");
+        return r.text();
+      })
+      .then(function (sdf) {
+        viewer.addModel(sdf, "sdf");
+        styleAndRender();
+      })
+      .catch(function () {
+        try {
+          viewer.addModel(SMILES, "smiles");
+          styleAndRender();
+        } catch (e) {
+          console.error("Could not load AP-001 structure.", e);
+        }
+      });
+  })();
+</script>

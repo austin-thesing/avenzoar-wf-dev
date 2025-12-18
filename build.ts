@@ -71,8 +71,37 @@ async function processCSSFile(filePath: string, outputPath: string): Promise<voi
   console.log(`✓ Minified CSS: ${basename(filePath)}`);
 }
 
+async function bundleJSImports(content: string, basePath: string): Promise<string> {
+  // Match lines like: // IMPORT: ./logo-draw.js
+  const importRegex = /^\/\/\s*IMPORT:\s*(.+\.js)\s*$/gm;
+  let bundled = content;
+  let match;
+  
+  while ((match = importRegex.exec(content)) !== null) {
+    const importPath = match[1].trim();
+    const fullImportPath = join(basePath, importPath);
+    
+    try {
+      const importedContent = await readFile(fullImportPath, "utf-8");
+      // Replace the import comment with the actual file content
+      bundled = bundled.replace(match[0], `\n// === Bundled from ${importPath} ===\n${importedContent}\n// === End of ${importPath} ===\n`);
+      console.log(`  ↳ Bundled: ${importPath}`);
+    } catch (error) {
+      console.warn(`  ⚠ Could not bundle ${importPath}:`, error);
+    }
+  }
+  
+  return bundled;
+}
+
 async function processJSFile(filePath: string, outputPath: string): Promise<void> {
-  const content = await readFile(filePath, "utf-8");
+  let content = await readFile(filePath, "utf-8");
+  
+  // Bundle any imports
+  const basePath = join(filePath, "..");
+  content = await bundleJSImports(content, basePath);
+  
+  // Minify the bundled content
   const minified = await minifyJS(content);
   
   await writeFile(outputPath, minified, "utf-8");
