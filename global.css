@@ -255,6 +255,16 @@ body {
   background-color: #1a1a1a;
 }
 
+/* Menu icon line wrappers for dark theme */
+.navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-top-wrapper,
+.navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-middle-wrapper,
+.navbar16_component.w-nav[data-theme="dark"] .menu-icon4_line-bottom-wrapper,
+.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-top-wrapper,
+.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-middle-wrapper,
+.navbar16_component.w-nav:not([data-theme]) .menu-icon4_line-bottom-wrapper {
+  background-color: transparent;
+}
+
 /* ===========================================
    LIGHT THEME - Dark hero sections
    White text/icons on transparent background
@@ -278,37 +288,48 @@ body {
   background-color: #ffffff;
 }
 
+/* Menu icon line wrappers for light theme */
+.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-top-wrapper,
+.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-middle-wrapper,
+.navbar16_component.w-nav[data-theme="light"] .menu-icon4_line-bottom-wrapper {
+  background-color: transparent;
+}
+
 /* ===========================================
    LOGO VISIBILITY STATES
    Show correct logo variant on page load via CSS
+   Logos are absolutely positioned in wrapper, use opacity only
+   Note: Using .logo-dark and .logo-light instead of just .light
+   to avoid conflicts with Webflow's built-in .light utility class
    =========================================== */
 
 /* Dark theme (default): Show dark logo, hide light logo */
-.navbar16_component.w-nav[data-theme="dark"] .logo-type:not(.light),
-.navbar16_component.w-nav:not([data-theme]) .logo-type:not(.light) {
+.navbar16_component.w-nav[data-theme="dark"] .logo-type.logo-dark,
+.navbar16_component.w-nav:not([data-theme]) .logo-type.logo-dark {
   opacity: 1;
-  display: block;
 }
 
-.navbar16_component.w-nav[data-theme="dark"] .logo-type.light,
-.navbar16_component.w-nav:not([data-theme]) .logo-type.light {
+.navbar16_component.w-nav[data-theme="dark"] .logo-type.logo-light,
+.navbar16_component.w-nav:not([data-theme]) .logo-type.logo-light {
   opacity: 0;
-  display: none;
 }
 
 /* Light theme: Show light logo, hide dark logo */
-.navbar16_component.w-nav[data-theme="light"] .logo-type.light {
+.navbar16_component.w-nav[data-theme="light"] .logo-type.logo-light {
   opacity: 1;
-  display: block;
 }
 
-.navbar16_component.w-nav[data-theme="light"] .logo-type:not(.light) {
+.navbar16_component.w-nav[data-theme="light"] .logo-type.logo-dark {
   opacity: 0;
-  display: none;
 }
 
 /* Logo icon should be visible by default */
 .avenzoar-logo-icon {
   opacity: 1;
   display: block;
+}
+
+/* Hide logo icon paths before JS animation kicks in */
+.avenzoar-logo-icon path {
+  opacity: 0;
 }

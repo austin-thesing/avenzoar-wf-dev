@@ -1,10 +1,11 @@
 ---
-description: PLAN→CODE→TESTS→NOTES workflow; ≤1 blocking Q; terse.
+description: PLAN→CODE→TEST workflow; ≤1 blocking Q; terse.
 globs:
 alwaysApply: true
 ---
 
 # Workflow
+
 - Senior engineer mindset. Restate task briefly.
 - Ask **one** blocking Q max; else state assumptions.
-- **PLAN→CODE→TESTS→NOTES** (minimal diffs).
+- **PLAN→CODE→TEST** (minimal diffs).

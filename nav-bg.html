@@ -62,14 +62,26 @@
     }
 
     /* Logo image styles */
-    .logo-type {
-      height: 32px;
+    .logo-type-wrapper {
+      position: relative;
       width: auto;
-      display: block;
+      height: 32px;
     }
 
-    .logo-type.light {
-      display: none;
+    .logo-type {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 32px;
+      width: auto;
+    }
+
+    .logo-type.logo-dark {
+      z-index: 1;
+    }
+
+    .logo-type.logo-light {
+      z-index: 0;
     }
 
     /* Animated logo icon */
@@ -226,16 +238,19 @@
           <!-- Additional paths truncated for brevity - include all paths from the-og-dude.html -->
         </svg>
         
-        <!-- Dark logo text (default, visible on light backgrounds) -->
-        <img loading="lazy" 
-             src="https://cdn.prod.website-files.com/690a59127dcaaf1a15ee711c/690a596a6f4b5fbf0ce4ca54_logo-type.svg" 
-             alt="Avenzoar Logo" 
-             class="logo-type">
-        <!-- Light logo text (visible on dark backgrounds) -->
-        <img loading="lazy" 
-             src="https://cdn.prod.website-files.com/690a59127dcaaf1a15ee711c/690a5adbe9c3ce23418ece45_logo-type-light.svg" 
-             alt="Avenzoar Logo Light" 
-             class="logo-type light">
+        <!-- Logo wrapper with position: relative -->
+        <div class="logo-type-wrapper">
+          <!-- Dark logo text (default, visible on light backgrounds) -->
+          <img loading="lazy" 
+               src="https://cdn.prod.website-files.com/690a59127dcaaf1a15ee711c/690a596a6f4b5fbf0ce4ca54_logo-type.svg" 
+               alt="Avenzoar Logo" 
+               class="logo-type logo-dark">
+          <!-- Light logo text (visible on dark backgrounds) -->
+          <img loading="lazy" 
+               src="https://cdn.prod.website-files.com/690a59127dcaaf1a15ee711c/690a5adbe9c3ce23418ece45_logo-type-light.svg" 
+               alt="Avenzoar Logo Light" 
+               class="logo-type logo-light">
+        </div>
       </a>
       <ul class="navbar-menu">
         <li><a href="#about" class="navbar16_nav-link">About</a></li>

@@ -53,13 +53,14 @@
   // Configuration
   const CONFIG = {
     scrollDistance: 100, // Distance in pixels to complete the fade
-    darkLogoSelector: ".logo-type:not(.light)",
-    lightLogoSelector: ".logo-type.light",
+    darkLogoSelector: ".logo-type.logo-dark",
+    lightLogoSelector: ".logo-type.logo-light",
     logoIconSelector: ".avenzoar-logo-icon", // Animated logo mark
     menuButtonSelector: ".w-nav-button", // Mobile menu button
     navLinksSelector: ".navbar16_nav-link", // Desktop nav links
     menuIconTextSelector: ".menu-icon4_text", // Menu icon text
     menuIconLinesSelector: ".menu-icon4_line-top, .menu-icon4_line-middle, .menu-icon4_line-bottom", // Menu icon lines (parent elements)
+    menuIconLineWrappersSelector: ".menu-icon4_line-top-wrapper, .menu-icon4_line-middle-wrapper, .menu-icon4_line-bottom-wrapper", // Menu icon line wrappers
   };
 
   // Wait for DOM and GSAP to be ready
@@ -86,10 +87,22 @@
     const navLinks = navbar.querySelectorAll(CONFIG.navLinksSelector);
     const menuIconText = navbar.querySelector(CONFIG.menuIconTextSelector);
     const menuIconLines = navbar.querySelectorAll(CONFIG.menuIconLinesSelector);
+    const menuIconLineWrappers = navbar.querySelectorAll(CONFIG.menuIconLineWrappersSelector);
 
     // Determine theme from data attribute
     const theme = navbar.getAttribute("data-theme") || "dark";
     const isLightTheme = theme === "light";
+
+    // Validate required logo elements exist
+    if (!darkLogo || !lightLogo) {
+      console.error("Logo text elements not found. Expected both:", {
+        darkLogo: CONFIG.darkLogoSelector,
+        lightLogo: CONFIG.lightLogoSelector,
+        foundDark: !!darkLogo,
+        foundLight: !!lightLogo
+      });
+      console.warn("Logo text will not be visible. Please add both logo images to the navbar.");
+    }
 
     // Store original menu text
     const originalMenuText = menuIconText ? menuIconText.textContent : "";
@@ -110,9 +123,9 @@
         // Use a slight delay to avoid conflicting with Webflow's animation
         if (isMenuOpen) {
           // Hide logo elements
-          if (logoIcon) gsap.set(logoIcon, { opacity: 0, display: "none" });
-          if (darkLogo) gsap.set(darkLogo, { opacity: 0, display: "none" });
-          if (lightLogo) gsap.set(lightLogo, { opacity: 0, display: "none" });
+          if (logoIcon) gsap.set(logoIcon, { opacity: 0 });
+          if (darkLogo) gsap.set(darkLogo, { opacity: 0 });
+          if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
           
           setTimeout(() => {
             if (menuIconText) {
@@ -121,16 +134,19 @@
             if (menuIconLines.length > 0) {
               gsap.set(menuIconLines, { backgroundColor: "#1a1a1a" });
             }
+            if (menuIconLineWrappers.length > 0) {
+              gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+            }
           }, 100);
         } else {
           // Show logo elements based on theme
-          if (logoIcon) gsap.set(logoIcon, { opacity: 1, display: "block" });
+          if (logoIcon) gsap.set(logoIcon, { opacity: 1 });
           if (isLightTheme) {
-            if (lightLogo) gsap.set(lightLogo, { opacity: 1, display: "block" });
-            if (darkLogo) gsap.set(darkLogo, { opacity: 0, display: "none" });
+            if (lightLogo) gsap.set(lightLogo, { opacity: 1 });
+            if (darkLogo) gsap.set(darkLogo, { opacity: 0 });
           } else {
-            if (darkLogo) gsap.set(darkLogo, { opacity: 1, display: "block" });
-            if (lightLogo) gsap.set(lightLogo, { opacity: 0, display: "none" });
+            if (darkLogo) gsap.set(darkLogo, { opacity: 1 });
+            if (lightLogo) gsap.set(lightLogo, { opacity: 0 });
           }
           
           // Restore based on scroll position and theme
@@ -148,12 +164,18 @@
             if (menuIconLines.length > 0) {
               gsap.set(menuIconLines, { backgroundColor: `rgb(${r}, ${g}, ${b})` });
             }
+            if (menuIconLineWrappers.length > 0) {
+              gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+            }
           } else {
             if (menuIconText) {
               gsap.set(menuIconText, { color: "#1a1a1a" });
             }
             if (menuIconLines.length > 0) {
               gsap.set(menuIconLines, { backgroundColor: "#1a1a1a" });
+            }
+            if (menuIconLineWrappers.length > 0) {
+              gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
             }
           }
         }
@@ -172,9 +194,13 @@
 
     if (isLightTheme) {
       // Light theme: white text/icons for dark hero backgrounds
-      // Show light logo, hide dark logo
-      if (darkLogo) gsap.set(darkLogo, { opacity: 0, display: "none" });
-      if (lightLogo) gsap.set(lightLogo, { opacity: 1, display: "block" });
+      // Show light logo (higher z-index), hide dark logo
+      if (darkLogo) {
+        gsap.set(darkLogo, { opacity: 0 });
+      }
+      if (lightLogo) {
+        gsap.set(lightLogo, { opacity: 1, visibility: "visible" });
+      }
 
       // Set logo icon to white color for light theme
       if (logoIcon) gsap.set(logoIcon, { color: "#ffffff" });
@@ -191,11 +217,20 @@
       if (menuIconLines.length > 0) {
         gsap.set(menuIconLines, { backgroundColor: "#ffffff" });
       }
+
+      // Set menu icon line wrappers to transparent
+      if (menuIconLineWrappers.length > 0) {
+        gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
+      }
     } else {
       // Dark theme: dark text/icons for light hero backgrounds
-      // Show dark logo, hide light logo
-      if (darkLogo) gsap.set(darkLogo, { opacity: 1, display: "block" });
-      if (lightLogo) gsap.set(lightLogo, { opacity: 0, display: "none" });
+      // Show dark logo (higher z-index), hide light logo
+      if (darkLogo) {
+        gsap.set(darkLogo, { opacity: 1, visibility: "visible" });
+      }
+      if (lightLogo) {
+        gsap.set(lightLogo, { opacity: 0 });
+      }
 
       // Set logo icon to dark color for dark theme
       if (logoIcon) gsap.set(logoIcon, { color: "#1a1a1a" });
@@ -211,6 +246,11 @@
       // Set menu icon lines to dark
       if (menuIconLines.length > 0) {
         gsap.set(menuIconLines, { backgroundColor: "#1a1a1a" });
+      }
+
+      // Set menu icon line wrappers to transparent
+      if (menuIconLineWrappers.length > 0) {
+        gsap.set(menuIconLineWrappers, { backgroundColor: "transparent" });
       }
     }
 
@@ -239,26 +279,19 @@
           scrub: true,
         },
         ease: "none",
-        onComplete: () => {
-          gsap.set(lightLogo, { opacity: 0, display: "none" });
-        },
       });
 
       // Fade in dark logo
-      gsap.fromTo(
-        darkLogo,
-        { opacity: 0, display: "block" },
-        {
-          opacity: 1,
-          scrollTrigger: {
-            trigger: "body",
-            start: "top top",
-            end: `${CONFIG.scrollDistance}px top`,
-            scrub: true,
-          },
-          ease: "none",
-        }
-      );
+      gsap.to(darkLogo, {
+        opacity: 1,
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: `${CONFIG.scrollDistance}px top`,
+          scrub: true,
+        },
+        ease: "none",
+      });
     }
 
     // Handle logo icon color change on scroll for light theme
@@ -307,6 +340,20 @@
     if (isLightTheme && menuIconLines.length > 0) {
       gsap.to(menuIconLines, {
         backgroundColor: "#1a1a1a", // Fade from white to dark
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: `${CONFIG.scrollDistance}px top`,
+          scrub: true,
+        },
+        ease: "none",
+      });
+    }
+
+    // Handle menu icon line wrappers - keep transparent on scroll for light theme
+    if (isLightTheme && menuIconLineWrappers.length > 0) {
+      gsap.to(menuIconLineWrappers, {
+        backgroundColor: "transparent", // Stay transparent
         scrollTrigger: {
           trigger: "body",
           start: "top top",
