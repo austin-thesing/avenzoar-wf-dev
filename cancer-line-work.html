@@ -159,10 +159,32 @@
 
   // Fade in canvas after first render
   let isLoaded = false;
+  let isVisible = false;
+  let animationId = null;
+
+  // Visibility detection - pause animation when scrolled out of view
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && !animationId) {
+          t0 = performance.now(); // Reset time to avoid jumps
+          animate();
+        }
+      });
+    },
+    { threshold: 0, rootMargin: "50px" } // Start slightly before visible
+  );
+  observer.observe(canvas);
 
   // Animation loop - gentle rotation only
   let t0 = performance.now();
   function animate() {
+    if (!isVisible) {
+      animationId = null;
+      return; // Stop loop when not visible
+    }
+
     if (!isLoaded) {
       canvas.classList.add("loaded");
       isLoaded = true;
@@ -183,7 +205,7 @@
     });
 
     renderer.render(scene, camera);
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
   }
-  animate();
+  // Initial start handled by observer when element becomes visible
 </script>
