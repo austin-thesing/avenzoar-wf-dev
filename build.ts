@@ -113,7 +113,6 @@ async function build(): Promise<void> {
   
   // Create dist directory
   await mkdir(DIST_DIR, { recursive: true });
-  await mkdir(join(DIST_DIR, SRC_DIR), { recursive: true });
   
   // Process HTML files from root
   const rootFiles = await readdir(".");
@@ -141,9 +140,9 @@ async function build(): Promise<void> {
     if (stats.isFile()) {
       const ext = extname(file).toLowerCase();
       if (ext === ".js") {
-        await processJSFile(filePath, join(DIST_DIR, SRC_DIR, file));
+        await processJSFile(filePath, join(DIST_DIR, file));
       } else if (ext === ".css") {
-        await processCSSFile(filePath, join(DIST_DIR, SRC_DIR, file));
+        await processCSSFile(filePath, join(DIST_DIR, file));
       }
     }
   }
