@@ -117,10 +117,29 @@
       }
     };
 
+    const initialRect = wrapper.getBoundingClientRect();
+    let lastWidth = initialRect.width;
+    let lastHeight = initialRect.height;
+    let resizeTimeout = null;
+
     buildOrbs();
 
     const resizeObserver = new ResizeObserver(() => {
-      buildOrbs();
+      const rect = wrapper.getBoundingClientRect();
+      const widthChange = Math.abs(rect.width - lastWidth);
+      const heightChange = Math.abs(rect.height - lastHeight);
+
+      // Only rebuild if there's a significant size change (more than 50px)
+      if (widthChange > 50 || heightChange > 50) {
+        // Debounce the rebuild to avoid multiple rapid rebuilds
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        
+        resizeTimeout = setTimeout(() => {
+          lastWidth = rect.width;
+          lastHeight = rect.height;
+          buildOrbs();
+        }, 300);
+      }
     });
 
     resizeObserver.observe(wrapper);
@@ -128,6 +147,7 @@
     wrapper.addEventListener(
       "animationcleanup",
       () => {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
         resizeObserver.disconnect();
         container.remove();
         delete wrapper.dataset.orbsInitialized;
