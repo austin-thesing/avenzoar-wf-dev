@@ -1,0 +1,18 @@
+---
+description: Avoid useEffect unless syncing with external systems.
+globs:
+  - "**/*.{tsx,jsx,ts,js}"
+alwaysApply: false
+---
+
+# You Might Not Need an Effect
+
+Effects sync with **external systems only** (DOM APIs, subscriptions, network).
+
+## Don't use Effect for:
+- Derived state → compute during render; `useMemo` if expensive.
+- User actions → event handlers.
+- State reset on prop change → use `key` or derive during render.
+
+## Do use Effect for:
+- External subscriptions, imperative DOM, timers.

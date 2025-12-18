@@ -1,0 +1,15 @@
+---
+description: Use ast-grep for structural code searches.
+globs:
+  - "**/*.{ts,tsx,js,jsx,py,go,rs,java,c,cpp}"
+alwaysApply: true
+---
+
+# Structural Search
+
+Use `ast-grep` (or `sg`) for code patterns/class/function searches, not regex grep.
+
+- `ast-grep --pattern 'pattern' --json`
+- Function: `ast-grep --pattern 'function $NAME($ARGS) { $$$ }'`
+- Class: `ast-grep --pattern 'class $NAME { $$$ }'`
+- Fallback: `/opt/homebrew/bin/ast-grep` or `rg` if unavailable.
