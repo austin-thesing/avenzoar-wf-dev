@@ -31,14 +31,17 @@
 <script src="https://3dmol.org/build/3Dmol-min.js"></script>
 <script>
   (function () {
+    // Mobile detection
+    const isMobile = window.matchMedia("(max-width: 768px)").matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     const SMILES = "COC1=CC=C(NC2=NN=C(O2)C2=CC=C(C=C2)C(=O)NO)C=C1";
     const PUBCHEM_3D = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/" + encodeURIComponent(SMILES) + "/SDF?record_type=3d";
 
-    // Transparent background viewer
+    // Transparent background viewer - disable antialiasing on mobile for performance
     const viewer = $3Dmol.createViewer("viewer", {
       backgroundColor: "black",
       backgroundAlpha: 0,
-      antialias: true,
+      antialias: !isMobile,
     });
 
     let baseView = null;
@@ -162,7 +165,18 @@
     function startAnimationLoop() {
       if (!baseView) return;
 
-      function frame() {
+      // Throttle to ~20fps on mobile (50ms interval) vs 60fps on desktop (16ms)
+      const frameInterval = isMobile ? 50 : 16;
+      let lastFrameTime = 0;
+
+      function frame(now) {
+        // Skip frames on mobile to maintain performance
+        if (now - lastFrameTime < frameInterval) {
+          requestAnimationFrame(frame);
+          return;
+        }
+        lastFrameTime = now;
+
         // smaller lerp = smoother, slower easing
         const lerpRot = 0.03; // rotation smoothing
         const lerpZoom = 0.03; // zoom smoothing

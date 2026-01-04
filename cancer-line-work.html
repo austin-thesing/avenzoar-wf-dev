@@ -22,6 +22,13 @@
     opacity: 1;
   }
 
+  /* Reduce opacity on mobile for subtler effect */
+  @media (max-width: 767px) {
+    .cancer-canvas.loaded {
+      opacity: 0.55;
+    }
+  }
+
   /* XL breakpoint (1280px and up) - Figma design */
   @media (min-width: 1280px) {
     .cancer-canvas {
@@ -57,25 +64,25 @@
   /* Mobile Landscape (478px - 767px) */
   @media (max-width: 767px) and (min-width: 478px) {
     .cancer-canvas {
-      width: 350px;
-      height: 400px;
-      right: -100px;
-      top: -60px;
-      -webkit-mask-image: radial-gradient(ellipse 85% 75% at 35% 50%, black 30%, transparent 70%);
-      mask-image: radial-gradient(ellipse 85% 75% at 35% 50%, black 30%, transparent 70%);
+      width: 550px;
+      height: 650px;
+      right: -200px;
+      top: -80px;
+      -webkit-mask-image: radial-gradient(ellipse 75% 70% at 35% 45%, black 25%, transparent 65%);
+      mask-image: radial-gradient(ellipse 75% 70% at 35% 45%, black 25%, transparent 65%);
     }
   }
 
   /* Mobile Portrait (up to 477px) */
   @media (max-width: 477px) {
     .cancer-canvas {
-      width: 280px;
-      height: 320px;
-      right: -60px;
-      top: -40px;
-      /* Mask positioned toward left since sphere is cropped on right */
-      -webkit-mask-image: radial-gradient(ellipse 90% 80% at 30% 50%, black 25%, transparent 65%);
-      mask-image: radial-gradient(ellipse 90% 80% at 30% 50%, black 25%, transparent 65%);
+      width: 520px;
+      height: 700px;
+      right: -220px;
+      top: -60px;
+      /* Larger sphere, more cropped on right, fading toward left edge */
+      -webkit-mask-image: radial-gradient(ellipse 70% 65% at 40% 40%, black 20%, transparent 60%);
+      mask-image: radial-gradient(ellipse 70% 65% at 40% 40%, black 20%, transparent 60%);
     }
   }
 </style>

@@ -1,13 +1,17 @@
 (() => {
   if (typeof window === "undefined") return;
 
-  const ORB_COUNT = 120;
+  // Mobile detection
+  const isMobile = window.matchMedia("(max-width: 768px)").matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // Reduce orb count significantly on mobile for performance
+  const ORB_COUNT = isMobile ? 25 : 120;
   const SIZE_RANGE = [1, 3];
-  const FLOAT_DISTANCE = [30, 80];
-  const FLOAT_DURATION = [20, 45];
+  const FLOAT_DISTANCE = isMobile ? [15, 40] : [30, 80]; // Smaller movements on mobile
+  const FLOAT_DURATION = isMobile ? [30, 60] : [20, 45]; // Slower = fewer repaints
   const FADE_DURATION = [8, 18];
 
-  // Mouse repulsion settings
+  // Mouse repulsion settings (disabled on mobile)
   const REPEL_RADIUS = 80; // How close mouse needs to be to affect orb
   const REPEL_STRENGTH = 25; // Max pixels to push away
   const REPEL_EASE_BACK = 0.8; // Seconds to ease back when mouse leaves
@@ -35,9 +39,11 @@
     orbsData.push({ el: orb, repelX: 0, repelY: 0 });
 
     // Distribute orbs throughout the entire height of main-wrapper
+    // Use viewport width to ensure orbs don't exceed visible area
+    const viewportWidth = Math.min(rect.width, window.innerWidth);
     const verticalPosition = (index / (ORB_COUNT - 1)) * rect.height;
     const horizontalVariation = gsap.utils.random(0.05, 0.95);
-    const startX = rect.width * horizontalVariation;
+    const startX = viewportWidth * horizontalVariation;
     const startY = verticalPosition + gsap.utils.random(-200, 200);
 
     gsap.set(orb, {
@@ -107,9 +113,10 @@
     Object.assign(container.style, {
       position: "absolute",
       inset: "0",
-      overflow: "visible",
+      overflow: "hidden",
       pointerEvents: "none",
       zIndex: "0",
+      maxWidth: "100vw",
     });
 
     wrapper.prepend(container);
@@ -189,10 +196,12 @@
       rafId = requestAnimationFrame(updateRepulsion);
     };
 
-    // Start the repulsion loop
-    wrapper.addEventListener("mousemove", handleMouseMove);
-    wrapper.addEventListener("mouseleave", handleMouseLeave);
-    rafId = requestAnimationFrame(updateRepulsion);
+    // Start the repulsion loop (desktop only - too expensive on mobile)
+    if (!isMobile) {
+      wrapper.addEventListener("mousemove", handleMouseMove);
+      wrapper.addEventListener("mouseleave", handleMouseLeave);
+      rafId = requestAnimationFrame(updateRepulsion);
+    }
 
     const initialRect = wrapper.getBoundingClientRect();
     let lastWidth = initialRect.width;
@@ -226,8 +235,10 @@
       () => {
         if (resizeTimeout) clearTimeout(resizeTimeout);
         if (rafId) cancelAnimationFrame(rafId);
-        wrapper.removeEventListener("mousemove", handleMouseMove);
-        wrapper.removeEventListener("mouseleave", handleMouseLeave);
+        if (!isMobile) {
+          wrapper.removeEventListener("mousemove", handleMouseMove);
+          wrapper.removeEventListener("mouseleave", handleMouseLeave);
+        }
         resizeObserver.disconnect();
         container.remove();
         delete wrapper.dataset.orbsInitialized;

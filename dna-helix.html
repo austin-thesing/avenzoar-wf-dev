@@ -1,6 +1,6 @@
 <style>
-  .dna-canvas {
-    position: fixed;
+  .dna-canvas canvas {
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
@@ -8,9 +8,8 @@
     opacity: 0;
     transition: opacity 0.5s ease-in;
     pointer-events: none;
-    z-index: -1;
   }
-  .dna-canvas.loaded {
+  .dna-canvas canvas.loaded {
     opacity: 1;
   }
 </style>
@@ -24,28 +23,31 @@
 <script type="module">
   import * as THREE from "three";
 
-  // Configuration
+  // Mobile detection
+  const isMobile = window.matchMedia("(max-width: 768px)").matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // Configuration - reduced complexity on mobile for performance
   const CONFIG = {
     // Helix geometry
-    radius: 1.2,           // Helix radius
-    height: 20,            // Total helix height
-    turns: 5,              // Number of complete rotations
-    pointsPerTurn: 40,     // Smoothness of curves
-    rungsPerTurn: 10,      // Connecting rungs per turn
-    
+    radius: 1.2, // Helix radius
+    height: 20, // Total helix height
+    turns: 5, // Number of complete rotations
+    pointsPerTurn: isMobile ? 15 : 40, // Reduced smoothness on mobile
+    rungsPerTurn: isMobile ? 4 : 10, // Fewer rungs on mobile
+
     // Visual style
     strandColor: 0xb4b9d2,
     strandOpacity: 0.7,
     rungColor: 0xb4b9d2,
     rungOpacity: 0.4,
-    
+
     // Animation
-    rotationSpeed: 0.08,   // Y-axis rotation speed
-    scrollSpeed: 0.15,     // Vertical scroll speed
-    
+    rotationSpeed: 0.08, // Y-axis rotation speed
+    scrollSpeed: 0.15, // Vertical scroll speed
+
     // Camera
     cameraZ: 8,
-    positionX: 1.5,        // Offset right of center
+    positionX: 1.5, // Offset right of center
   };
 
   const THEME = {
@@ -54,13 +56,19 @@
     bg: 0x0d1126,
   };
 
-  // Setup
-  const canvas = document.createElement("canvas");
-  canvas.classList.add("dna-canvas");
-  document.body.appendChild(canvas);
+  // Setup - find existing container
+  const container = document.querySelector(".dna-canvas");
+  if (!container) {
+    console.error("DNA Helix: No element with class 'dna-canvas' found");
+    return;
+  }
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const canvas = document.createElement("canvas");
+  container.appendChild(canvas);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: false });
+  // Limit pixel ratio: 1 on mobile for performance, max 2 on desktop
+  renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(THEME.bg, 1);
 
   const scene = new THREE.Scene();
@@ -82,19 +90,15 @@
   function createHelixCurve(phaseOffset = 0) {
     const points = [];
     const totalPoints = CONFIG.turns * CONFIG.pointsPerTurn;
-    
+
     for (let i = 0; i <= totalPoints; i++) {
       const t = i / CONFIG.pointsPerTurn;
       const angle = t * Math.PI * 2 + phaseOffset;
       const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
-      
-      points.push(new THREE.Vector3(
-        Math.cos(angle) * CONFIG.radius,
-        y,
-        Math.sin(angle) * CONFIG.radius
-      ));
+
+      points.push(new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius));
     }
-    
+
     return new THREE.CatmullRomCurve3(points);
   }
 
@@ -114,24 +118,16 @@
   function createRungs() {
     const rungGroup = new THREE.Group();
     const totalRungs = CONFIG.turns * CONFIG.rungsPerTurn;
-    
+
     for (let i = 0; i <= totalRungs; i++) {
       const t = i / CONFIG.rungsPerTurn;
       const angle = t * Math.PI * 2;
       const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
-      
+
       // Points on each strand
-      const p1 = new THREE.Vector3(
-        Math.cos(angle) * CONFIG.radius,
-        y,
-        Math.sin(angle) * CONFIG.radius
-      );
-      const p2 = new THREE.Vector3(
-        Math.cos(angle + Math.PI) * CONFIG.radius,
-        y,
-        Math.sin(angle + Math.PI) * CONFIG.radius
-      );
-      
+      const p1 = new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius);
+      const p2 = new THREE.Vector3(Math.cos(angle + Math.PI) * CONFIG.radius, y, Math.sin(angle + Math.PI) * CONFIG.radius);
+
       const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
       const material = new THREE.LineBasicMaterial({
         color: THEME.rung,
@@ -141,7 +137,7 @@
       const line = new THREE.Line(geometry, material);
       rungGroup.add(line);
     }
-    
+
     return rungGroup;
   }
 
