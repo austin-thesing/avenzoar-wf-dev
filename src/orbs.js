@@ -35,9 +35,6 @@
 
     container.appendChild(orb);
 
-    // Store orb data for mouse interaction
-    orbsData.push({ el: orb, repelX: 0, repelY: 0 });
-
     // Distribute orbs throughout the entire height of main-wrapper
     // Use viewport width to ensure orbs don't exceed visible area
     const viewportWidth = Math.min(rect.width, window.innerWidth);
@@ -52,31 +49,61 @@
       scale: 1,
     });
 
+    // Store orb data for mouse interaction with cached position
+    orbsData.push({ 
+      el: orb, 
+      x: startX,
+      y: startY,
+      size: size,
+      currentX: 0,
+      currentY: 0,
+      repelX: 0, 
+      repelY: 0 
+    });
+
     // Create random curved movement paths
     const moveX = gsap.utils.random(FLOAT_DISTANCE[0], FLOAT_DISTANCE[1]);
     const moveY = gsap.utils.random(FLOAT_DISTANCE[0], FLOAT_DISTANCE[1]);
     const moveX2 = gsap.utils.random(FLOAT_DISTANCE[0], FLOAT_DISTANCE[1]);
     const moveY2 = gsap.utils.random(FLOAT_DISTANCE[0], FLOAT_DISTANCE[1]);
 
+    const orbData = orbsData[orbsData.length - 1]; // Get the data we just pushed
     const tl = gsap.timeline({ repeat: -1 });
 
+    const pos1X = startX - size / 2 + gsap.utils.random(-moveX, moveX, 1, false);
+    const pos1Y = startY - size / 2 + gsap.utils.random(-moveY, moveY, 1, false);
+    const pos2X = pos1X + gsap.utils.random(-moveX2, moveX2, 1, false);
+    const pos2Y = pos1Y + gsap.utils.random(-moveY2, moveY2, 1, false);
+
     tl.to(orb, {
-      x: `+=${gsap.utils.random(-moveX, moveX, 1, false)}`,
-      y: `+=${gsap.utils.random(-moveY, moveY, 1, false)}`,
+      x: pos1X,
+      y: pos1Y,
       duration: gsap.utils.random(FLOAT_DURATION[0], FLOAT_DURATION[1]),
       ease: "power1.inOut",
+      onUpdate: () => {
+        orbData.currentX = gsap.getProperty(orb, "x");
+        orbData.currentY = gsap.getProperty(orb, "y");
+      }
     })
       .to(orb, {
-        x: `+=${gsap.utils.random(-moveX2, moveX2, 1, false)}`,
-        y: `+=${gsap.utils.random(-moveY2, moveY2, 1, false)}`,
+        x: pos2X,
+        y: pos2Y,
         duration: gsap.utils.random(FLOAT_DURATION[0], FLOAT_DURATION[1]),
         ease: "power1.inOut",
+        onUpdate: () => {
+          orbData.currentX = gsap.getProperty(orb, "x");
+          orbData.currentY = gsap.getProperty(orb, "y");
+        }
       })
       .to(orb, {
         x: startX - size / 2,
         y: startY - size / 2,
         duration: gsap.utils.random(FLOAT_DURATION[0], FLOAT_DURATION[1]),
         ease: "power1.inOut",
+        onUpdate: () => {
+          orbData.currentX = gsap.getProperty(orb, "x");
+          orbData.currentY = gsap.getProperty(orb, "y");
+        }
       });
 
     gsap.to(orb, {
@@ -153,14 +180,15 @@
     };
 
     const updateRepulsion = () => {
+      // Batch all layout calculations to avoid forced reflow
       orbsData.forEach((data) => {
-        const orb = data.el;
-        const orbRect = orb.getBoundingClientRect();
-        const wrapperRect = wrapper.getBoundingClientRect();
-
-        // Get orb center relative to wrapper
-        const orbCenterX = orbRect.left - wrapperRect.left + wrapper.scrollLeft + orbRect.width / 2;
-        const orbCenterY = orbRect.top - wrapperRect.top + wrapper.scrollTop + orbRect.height / 2;
+        // Use cached positions instead of getBoundingClientRect
+        // Account for current GSAP transform position
+        const gsapTransform = gsap.getProperty(data.el, "x");
+        const gsapTransformY = gsap.getProperty(data.el, "y");
+        
+        const orbCenterX = (typeof gsapTransform === 'number' ? gsapTransform : data.currentX) + data.size / 2;
+        const orbCenterY = (typeof gsapTransformY === 'number' ? gsapTransformY : data.currentY) + data.size / 2;
 
         const dx = orbCenterX - mouseX;
         const dy = orbCenterY - mouseY;
@@ -171,21 +199,26 @@
           const force = (1 - distance / REPEL_RADIUS) * REPEL_STRENGTH;
           const angle = Math.atan2(dy, dx);
 
-          data.repelX = Math.cos(angle) * force;
-          data.repelY = Math.sin(angle) * force;
+          const newRepelX = Math.cos(angle) * force;
+          const newRepelY = Math.sin(angle) * force;
 
-          gsap.to(orb, {
-            "--repelX": data.repelX,
-            "--repelY": data.repelY,
-            "duration": 0.15,
-            "ease": "power2.out",
-            "overwrite": "auto",
-          });
+          // Only update if there's a meaningful change
+          if (Math.abs(newRepelX - data.repelX) > 0.1 || Math.abs(newRepelY - data.repelY) > 0.1) {
+            data.repelX = newRepelX;
+            data.repelY = newRepelY;
 
-          gsap.set(orb, {
-            x: `+=${data.repelX * 0.1}`,
-            y: `+=${data.repelY * 0.1}`,
-          });
+            // Apply repulsion offset
+            data.currentX += data.repelX * 0.1;
+            data.currentY += data.repelY * 0.1;
+
+            gsap.to(data.el, {
+              x: data.currentX,
+              y: data.currentY,
+              duration: 0.15,
+              ease: "power2.out",
+              overwrite: "auto",
+            });
+          }
         } else if (data.repelX !== 0 || data.repelY !== 0) {
           // Ease back to original position
           data.repelX = 0;
