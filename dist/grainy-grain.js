@@ -1,0 +1,1 @@
+(()=>{const e=document.querySelector("#turb");if(!e)return void console.warn("[grainy-grain] #turb filter not found; grain disabled.");e.setAttribute("baseFrequency",.65.toFixed(2)),e.setAttribute("seed",42)})();

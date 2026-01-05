@@ -168,7 +168,9 @@
       this.time += this.config.waveSpeed * 0.01; // Slower, smoother
 
       const cx = this.width / 2;
-      const cy = this.height / 2; // Reverted to center horizon
+      // Move perspective center down to push the "near" dots to the bottom
+      // This allows the wave to fill the height from bottom to top (horizon)
+      const cy = this.height * 1.2;
       const fov = this.config.fov;
 
       // Update and draw particles
@@ -258,21 +260,8 @@
       this.ctx.fillStyle = widthFade;
       this.ctx.fillRect(0, 0, this.width, this.height);
 
-      // 2. Horizon Fade (Top)
-      // Essential for the "floor" perspective so dots don't pop in at the horizon
-      const horizonFade = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.2);
-      horizonFade.addColorStop(0, "rgba(0,0,0,1)");
-      horizonFade.addColorStop(1, "rgba(0,0,0,0)");
-
-      this.ctx.fillStyle = horizonFade;
-      this.ctx.fillRect(0, 0, this.width, this.height * 0.2);
-
-      // 3. Bottom Fade (Subtle)
-      // Ensure dots at very bottom don't get abruptly cut off, but don't erase them
-      // "Fully present at bottom" means we shouldn't mask them out strongly.
-      // But a very slight soft edge is usually good practice.
-      // The user asked for "fully present", so let's removing any bottom masking.
-      // Keeping this section comment for clarity on decision.
+      // 2. Horizon Fade (Top) - REMOVED to allow 100% height visibility
+      // The user requested "dots 100% height instead of the current cap"
 
       this.ctx.restore();
     }
@@ -288,7 +277,7 @@
 
   // Initialization logic
   function initWaveDots() {
-    const containers = document.querySelectorAll(".wave-dots-bg");
+    const containers = document.querySelectorAll("#wave-dots-bg");
     containers.forEach((container) => {
       if (container.dataset.waveDotsInitialized) return;
       container.dataset.waveDotsInitialized = "true";

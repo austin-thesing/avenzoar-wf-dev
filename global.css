@@ -224,14 +224,13 @@ body {
 
 /* Prevent horizontal scroll on iOS Safari */
 html {
-  overflow: hidden;
+  /* Restored default scrolling to fix scrollbar z-index issues and scrollY detection */
   height: 100%;
 }
 
 body {
-  overflow-y: auto;
-  overflow-x: clip;
-  height: 100%;
+  /* Removed overflow-y: auto to allow window scrolling */
+  min-height: 100%;
   -webkit-overflow-scrolling: touch;
 }
 

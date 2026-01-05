@@ -31,26 +31,35 @@
         // Calculate 75svh (75% of small viewport height)
         const scrollAmount = window.innerHeight * 0.75;
 
-        // Find the scrollable element - try body first (Webflow sites),
-        // then fallback to standard scrollingElement
-        function getScrollableElement() {
-          const body = document.body;
-          if (body.scrollHeight > body.clientHeight) {
-            const bodyStyle = getComputedStyle(body);
-            if (bodyStyle.overflowY === "auto" || bodyStyle.overflowY === "scroll") {
+        // Determine correct scroll container
+        // (Handles case where html { overflow: hidden } and body scrolls)
+        function getScrollContainer() {
+          const html = document.documentElement;
+          const htmlStyle = window.getComputedStyle(html);
+
+          if (
+            htmlStyle.overflowY === "hidden" ||
+            htmlStyle.overflow === "hidden"
+          ) {
+            const body = document.body;
+            const bodyStyle = window.getComputedStyle(body);
+            if (
+              bodyStyle.overflowY === "auto" ||
+              bodyStyle.overflowY === "scroll"
+            ) {
               return body;
             }
           }
-          return document.scrollingElement || document.documentElement || body;
+          return window;
         }
 
-        const scrollingElement = getScrollableElement();
-        const currentScroll = scrollingElement.scrollTop || window.pageYOffset || 0;
-        const scrollTarget = currentScroll + scrollAmount;
+        const container = getScrollContainer();
+        const currentScroll =
+          container === window ? window.scrollY : container.scrollTop;
+        const target = currentScroll + scrollAmount;
 
-        // Smooth scroll to target
-        scrollingElement.scrollTo({
-          top: scrollTarget,
+        container.scrollTo({
+          top: target,
           behavior: "smooth",
         });
       },
