@@ -1,6 +1,21 @@
 // Register the DrawSVG plugin
 gsap.registerPlugin(DrawSVGPlugin);
 
+// Session storage key for tracking if animation has played
+const LOGO_ANIMATION_KEY = "avenzoar_logo_animation_played";
+
+// NOTE: The initial state class should be added in an inline <script> in the <head>
+// BEFORE any CSS loads. Add this to your HTML <head>:
+/*
+<script>
+(function() {
+  if (sessionStorage.getItem('avenzoar_logo_animation_played')) {
+    document.documentElement.classList.add('logo-animation-played');
+  }
+})();
+</script>
+*/
+
 // Wait for DOM to ensure SVG exists, then set initial state
 function initLogoAnimation() {
   const logoIcon = document.querySelector(".avenzoar-logo-icon");
@@ -17,7 +32,46 @@ function initLogoAnimation() {
     document.querySelector(".logo-type-wrapper") || 
     logoIcon.nextElementSibling;
   
-  // Set initial state for paths
+  // Check if animation has already played in this session
+  const hasPlayed = sessionStorage.getItem(LOGO_ANIMATION_KEY);
+  
+  if (hasPlayed) {
+    // Skip draw animation - just fade in both logo and text together
+    // Set paths to final state (fully drawn, filled, no stroke)
+    gsap.set(paths, { 
+      opacity: 1,
+      drawSVG: "100%", 
+      fillOpacity: 1,
+      stroke: "transparent"
+    });
+    
+    // Set logo icon to invisible, ready to fade in
+    gsap.set(logoIcon, {
+      opacity: 0,
+      scale: 1
+    });
+    
+    // Set logo text wrapper to final position (no slide) and invisible
+    if (logoTextWrapper) {
+      gsap.set(logoTextWrapper, { 
+        x: 0,  // Final position - no sliding
+        opacity: 0  // Start invisible
+      });
+    }
+    
+    // Fade in both logo and text together
+    const simpleTl = gsap.timeline({ delay: 0.3 });
+    
+    simpleTl.to([logoIcon, logoTextWrapper].filter(Boolean), {
+      opacity: 1,
+      duration: 0.6,
+      ease: "power2.out"
+    });
+    
+    return;
+  }
+  
+  // Set initial state for paths (animation will play)
   gsap.set(paths, { 
     opacity: 1,
     drawSVG: "0%", 
@@ -28,7 +82,11 @@ function initLogoAnimation() {
   // Create the animation timeline with smoother easing
   const tl = gsap.timeline({ 
     defaults: { ease: "power2.out" },
-    delay: 0.3
+    delay: 0.3,
+    onComplete: () => {
+      // Mark animation as played in session storage
+      sessionStorage.setItem(LOGO_ANIMATION_KEY, "true");
+    }
   });
 
   // Step 1: Text slides right first with ultra-smooth easing

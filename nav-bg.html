@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Navbar Background Fade - Test</title>
+  
+  <!-- CRITICAL: Check session storage BEFORE any CSS loads to prevent flash -->
+  <script>
+  (function() {
+    if (sessionStorage.getItem('avenzoar_logo_animation_played')) {
+      document.documentElement.classList.add('logo-animation-played');
+    }
+  })();
+  </script>
+  
   <link rel="stylesheet" href="global.css">
   <style>
     body {

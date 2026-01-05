@@ -8,6 +8,8 @@
     opacity: 0;
     transition: opacity 0.5s ease-in;
     pointer-events: none;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
   }
   .dna-canvas canvas.loaded {
     opacity: 1;
@@ -29,7 +31,7 @@
   // Configuration - reduced complexity on mobile for performance
   const CONFIG = {
     // Helix geometry
-    radius: 1.2, // Helix radius
+    radius: 2.5, // Helix radius - scaled up
     height: 20, // Total helix height
     turns: 5, // Number of complete rotations
     pointsPerTurn: isMobile ? 15 : 40, // Reduced smoothness on mobile
@@ -47,7 +49,7 @@
 
     // Camera
     cameraZ: 8,
-    positionX: 1.5, // Offset right of center
+    positionX: 6, // Positioned to cut off at right edge
   };
 
   const THEME = {
@@ -60,134 +62,140 @@
   const container = document.querySelector(".dna-canvas");
   if (!container) {
     console.error("DNA Helix: No element with class 'dna-canvas' found");
-    return;
-  }
+  } else {
+    // Wrap everything in else block to avoid illegal return
+    const canvas = document.createElement("canvas");
+    container.appendChild(canvas);
 
-  const canvas = document.createElement("canvas");
-  container.appendChild(canvas);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: true });
+    // Limit pixel ratio: 1 on mobile for performance, max 2 on desktop
+    renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(THEME.bg, 0);
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: false });
-  // Limit pixel ratio: 1 on mobile for performance, max 2 on desktop
-  renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(THEME.bg, 1);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, container.offsetWidth / container.offsetHeight, 0.1, 100);
+    camera.position.set(CONFIG.positionX, 0, CONFIG.cameraZ);
+    camera.lookAt(CONFIG.positionX, 0, 0);
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(CONFIG.positionX, 0, CONFIG.cameraZ);
-  camera.lookAt(CONFIG.positionX, 0, 0);
+    function resize() {
+      const w = container.offsetWidth;
+      const h = container.offsetHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
 
-  function resize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener("resize", resize);
-  resize();
+    // Create helix strands using CatmullRomCurve3 for smooth curves
+    function createHelixCurve(phaseOffset = 0) {
+      const points = [];
+      const totalPoints = CONFIG.turns * CONFIG.pointsPerTurn;
 
-  // Create helix strands using CatmullRomCurve3 for smooth curves
-  function createHelixCurve(phaseOffset = 0) {
-    const points = [];
-    const totalPoints = CONFIG.turns * CONFIG.pointsPerTurn;
+      // Create points from 0 to height (not centered) for seamless looping
+      for (let i = 0; i <= totalPoints; i++) {
+        const t = i / CONFIG.pointsPerTurn;
+        const angle = t * Math.PI * 2 + phaseOffset;
+        const y = (t / CONFIG.turns) * CONFIG.height;
 
-    for (let i = 0; i <= totalPoints; i++) {
-      const t = i / CONFIG.pointsPerTurn;
-      const angle = t * Math.PI * 2 + phaseOffset;
-      const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
+        points.push(new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius));
+      }
 
-      points.push(new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius));
+      return new THREE.CatmullRomCurve3(points);
     }
 
-    return new THREE.CatmullRomCurve3(points);
-  }
-
-  // Create strand geometry from curve
-  function createStrandLine(curve) {
-    const points = curve.getPoints(CONFIG.turns * CONFIG.pointsPerTurn);
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({
-      color: THEME.strand,
-      transparent: true,
-      opacity: CONFIG.strandOpacity,
-    });
-    return new THREE.Line(geometry, material);
-  }
-
-  // Create connecting rungs
-  function createRungs() {
-    const rungGroup = new THREE.Group();
-    const totalRungs = CONFIG.turns * CONFIG.rungsPerTurn;
-
-    for (let i = 0; i <= totalRungs; i++) {
-      const t = i / CONFIG.rungsPerTurn;
-      const angle = t * Math.PI * 2;
-      const y = (t / CONFIG.turns) * CONFIG.height - CONFIG.height / 2;
-
-      // Points on each strand
-      const p1 = new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius);
-      const p2 = new THREE.Vector3(Math.cos(angle + Math.PI) * CONFIG.radius, y, Math.sin(angle + Math.PI) * CONFIG.radius);
-
-      const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+    // Create strand geometry from curve
+    function createStrandLine(curve) {
+      const points = curve.getPoints(CONFIG.turns * CONFIG.pointsPerTurn);
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
       const material = new THREE.LineBasicMaterial({
-        color: THEME.rung,
+        color: THEME.strand,
         transparent: true,
-        opacity: CONFIG.rungOpacity,
+        opacity: CONFIG.strandOpacity,
       });
-      const line = new THREE.Line(geometry, material);
-      rungGroup.add(line);
+      return new THREE.Line(geometry, material);
     }
 
-    return rungGroup;
-  }
+    // Create connecting rungs
+    function createRungs() {
+      const rungGroup = new THREE.Group();
+      const totalRungs = CONFIG.turns * CONFIG.rungsPerTurn;
 
-  // Build the helix group
-  const helixGroup = new THREE.Group();
+      for (let i = 0; i <= totalRungs; i++) {
+        const t = i / CONFIG.rungsPerTurn;
+        const angle = t * Math.PI * 2;
+        const y = (t / CONFIG.turns) * CONFIG.height;
 
-  // Two strands offset by PI (180°)
-  const strand1 = createStrandLine(createHelixCurve(0));
-  const strand2 = createStrandLine(createHelixCurve(Math.PI));
-  helixGroup.add(strand1);
-  helixGroup.add(strand2);
+        // Points on each strand
+        const p1 = new THREE.Vector3(Math.cos(angle) * CONFIG.radius, y, Math.sin(angle) * CONFIG.radius);
+        const p2 = new THREE.Vector3(Math.cos(angle + Math.PI) * CONFIG.radius, y, Math.sin(angle + Math.PI) * CONFIG.radius);
 
-  // Add rungs
-  const rungs = createRungs();
-  helixGroup.add(rungs);
+        const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+        const material = new THREE.LineBasicMaterial({
+          color: THEME.rung,
+          transparent: true,
+          opacity: CONFIG.rungOpacity,
+        });
+        const line = new THREE.Line(geometry, material);
+        rungGroup.add(line);
+      }
 
-  // Clone for seamless vertical loop
-  const helixClone = helixGroup.clone();
-  helixClone.position.y = CONFIG.height;
-
-  const masterGroup = new THREE.Group();
-  masterGroup.add(helixGroup);
-  masterGroup.add(helixClone);
-  masterGroup.position.x = CONFIG.positionX;
-
-  scene.add(masterGroup);
-
-  // Animation
-  let isLoaded = false;
-  let scrollOffset = 0;
-
-  function animate() {
-    if (!isLoaded) {
-      canvas.classList.add("loaded");
-      isLoaded = true;
+      return rungGroup;
     }
 
-    // Rotate on Y-axis
-    masterGroup.rotation.y += CONFIG.rotationSpeed * 0.016; // ~60fps normalized
+    // Build the helix group
+    const helixGroup = new THREE.Group();
 
-    // Scroll vertically for seamless loop
-    scrollOffset += CONFIG.scrollSpeed * 0.016;
-    if (scrollOffset >= CONFIG.height) {
-      scrollOffset -= CONFIG.height;
+    // Two strands offset by PI (180°)
+    const strand1 = createStrandLine(createHelixCurve(0));
+    const strand2 = createStrandLine(createHelixCurve(Math.PI));
+    helixGroup.add(strand1);
+    helixGroup.add(strand2);
+
+    // Add rungs
+    const rungs = createRungs();
+    helixGroup.add(rungs);
+
+    // Create seamless loop by duplicating the helix
+    const helixClone = helixGroup.clone();
+    helixClone.position.y = CONFIG.height;
+
+    const masterGroup = new THREE.Group();
+    masterGroup.add(helixGroup);
+    masterGroup.add(helixClone);
+    masterGroup.position.x = CONFIG.positionX;
+    // Center the view on the middle of the helix
+    masterGroup.position.y = -CONFIG.height / 2;
+
+    scene.add(masterGroup);
+
+    // Animation - seamless vertical loop (not tied to page scroll)
+    let isLoaded = false;
+    let scrollOffset = 0;
+
+    function animate() {
+      if (!isLoaded) {
+        canvas.classList.add("loaded");
+        isLoaded = true;
+      }
+
+      // Rotate on Y-axis
+      masterGroup.rotation.y += CONFIG.rotationSpeed * 0.016; // ~60fps normalized
+
+      // Seamless vertical scroll using modulo
+      scrollOffset += CONFIG.scrollSpeed * 0.016;
+      
+      // Wrap around seamlessly - modulo ensures no snap
+      const wrappedOffset = scrollOffset % CONFIG.height;
+      
+      // Position so the helix scrolls down continuously
+      // Offset by half height to center the view
+      masterGroup.position.y = -CONFIG.height / 2 - wrappedOffset;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
     }
-    masterGroup.position.y = -scrollOffset + CONFIG.height / 2;
 
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  }
-
-  animate();
+    animate();
+  } // End of else block
 </script>

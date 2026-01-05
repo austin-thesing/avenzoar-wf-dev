@@ -367,3 +367,15 @@ body {
   transition: none;
 }
 */
+
+/* Override initial states when animation has already played
+   This prevents the flash of transformed/visible content on subsequent page loads */
+.logo-animation-played .avenzoar-logo-icon {
+  opacity: 0;
+  transform: scale(1);
+}
+
+.logo-animation-played .logo-type-wrapper {
+  transform: translateX(0) !important;
+  opacity: 0;
+}
