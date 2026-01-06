@@ -8,8 +8,8 @@
     opacity: 0;
     transition: opacity 0.5s ease-in;
     pointer-events: none;
-    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0) 100%);
   }
   .dna-canvas canvas.loaded {
     opacity: 1;
@@ -18,7 +18,7 @@
 <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js"
     }
   }
 </script>
@@ -184,10 +184,10 @@
 
       // Seamless vertical scroll using modulo
       scrollOffset += CONFIG.scrollSpeed * 0.016;
-      
+
       // Wrap around seamlessly - modulo ensures no snap
       const wrappedOffset = scrollOffset % CONFIG.height;
-      
+
       // Position so the helix scrolls down continuously
       // Offset by half height to center the view
       masterGroup.position.y = -CONFIG.height / 2 - wrappedOffset;
