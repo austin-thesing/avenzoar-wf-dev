@@ -109,6 +109,39 @@ async function processJSFile(filePath: string, outputPath: string): Promise<void
   console.log(`✓ Minified JS: ${basename(filePath)}`);
 }
 
+async function createGlobalBundle(): Promise<void> {
+  const globalFiles = ["orbs.js", "grainy-grain.js", "scroll-down.js"];
+  const bundledParts: string[] = [];
+
+  for (const fileName of globalFiles) {
+    const filePath = join(SRC_DIR, fileName);
+    try {
+      let content = await readFile(filePath, "utf-8");
+      
+      // Bundle any imports (e.g., if any of these files have imports)
+      const basePath = join(filePath, "..");
+      content = await bundleJSImports(content, basePath);
+      
+      bundledParts.push(`\n// === ${fileName} ===\n${content}\n`);
+      console.log(`  ↳ Bundled: ${fileName}`);
+    } catch (error) {
+      console.warn(`  ⚠ Could not read ${fileName}:`, error);
+    }
+  }
+
+  if (bundledParts.length === 0) {
+    console.warn("⚠ No files to bundle for global.js");
+    return;
+  }
+
+  const bundledContent = bundledParts.join("\n");
+  const minified = await minifyJS(bundledContent);
+  const outputPath = join(DIST_DIR, "global.js");
+  
+  await writeFile(outputPath, minified, "utf-8");
+  console.log(`✓ Created bundled global.js`);
+}
+
 async function build(): Promise<void> {
   console.log("Building production files...\n");
 
@@ -133,6 +166,9 @@ async function build(): Promise<void> {
     }
   }
 
+  // Files to exclude from individual processing (they'll be bundled into global.js)
+  const globalBundleFiles = new Set(["orbs.js", "grainy-grain.js", "scroll-down.js"]);
+
   // Process JS and CSS files from src/
   const srcFiles = await readdir(SRC_DIR);
   for (const file of srcFiles) {
@@ -142,12 +178,18 @@ async function build(): Promise<void> {
     if (stats.isFile()) {
       const ext = extname(file).toLowerCase();
       if (ext === ".js") {
-        await processJSFile(filePath, join(DIST_DIR, file));
+        // Skip files that will be bundled into global.js
+        if (!globalBundleFiles.has(file)) {
+          await processJSFile(filePath, join(DIST_DIR, file));
+        }
       } else if (ext === ".css") {
         await processCSSFile(filePath, join(DIST_DIR, file));
       }
     }
   }
+
+  // Create global.js bundle from orbs, grainy-grain, and scroll-down
+  await createGlobalBundle();
 
   console.log("\n✓ Build complete! Files are in the 'dist' directory.");
 }
