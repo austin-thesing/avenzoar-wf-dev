@@ -1,10 +1,8 @@
 <style>
-  /* Ensure parent container clips overflow */
   .section_header5 {
     overflow: clip !important;
     overflow-x: clip !important;
   }
-
   .cancer-canvas {
     position: absolute;
     top: -210px;
@@ -14,22 +12,17 @@
     opacity: 0;
     transition: opacity 0.3s ease-in;
     pointer-events: none;
-    /* Soft fade at edges - no hard box */
     -webkit-mask-image: radial-gradient(ellipse 65% 65% at center, black 40%, transparent 75%);
     mask-image: radial-gradient(ellipse 65% 65% at center, black 40%, transparent 75%);
   }
   .cancer-canvas.loaded {
     opacity: 1;
   }
-
-  /* Reduce opacity on mobile for subtler effect */
   @media (max-width: 767px) {
     .cancer-canvas.loaded {
       opacity: 0.55;
     }
   }
-
-  /* XL breakpoint (1280px and up) - Figma design */
   @media (min-width: 1280px) {
     .cancer-canvas {
       width: 1106px;
@@ -38,8 +31,6 @@
       mask-image: radial-gradient(ellipse 60% 60% at center, black 45%, transparent 75%);
     }
   }
-
-  /* Large (992px - 1279px) */
   @media (max-width: 1279px) and (min-width: 992px) {
     .cancer-canvas {
       width: 820px;
@@ -48,8 +39,6 @@
       mask-image: radial-gradient(ellipse 62% 62% at center, black 42%, transparent 75%);
     }
   }
-
-  /* Tablet (768px - 991px) */
   @media (max-width: 991px) and (min-width: 768px) {
     .cancer-canvas {
       width: 600px;
@@ -60,8 +49,6 @@
       mask-image: radial-gradient(ellipse 70% 70% at 40% 50%, black 35%, transparent 70%);
     }
   }
-
-  /* Mobile Landscape (478px - 767px) */
   @media (max-width: 767px) and (min-width: 478px) {
     .cancer-canvas {
       width: 550px;
@@ -72,15 +59,12 @@
       mask-image: radial-gradient(ellipse 75% 70% at 35% 45%, black 25%, transparent 65%);
     }
   }
-
-  /* Mobile Portrait (up to 477px) */
   @media (max-width: 477px) {
     .cancer-canvas {
       width: 520px;
       height: 700px;
       right: -220px;
       top: -60px;
-      /* Larger sphere, more cropped on right, fading toward left edge */
       -webkit-mask-image: radial-gradient(ellipse 70% 65% at 40% 40%, black 20%, transparent 60%);
       mask-image: radial-gradient(ellipse 70% 65% at 40% 40%, black 20%, transparent 60%);
     }
@@ -95,124 +79,74 @@
 </script>
 <script type="module">
   import * as THREE from "three";
-
+  // Share Three.js instance globally to avoid duplicate imports with React components
+  if (typeof window !== "undefined") {
+    window.THREE = THREE;
+  }
   const container = document.querySelector(".section_header5");
-  if (!container) {
-    console.error("Could not find .section_header5 element");
-  }
+  container || console.error("Could not find .section_header5 element");
   const canvas = document.createElement("canvas");
-  canvas.classList.add("cancer-canvas");
-  canvas.style.backgroundColor = "transparent";
-  container.appendChild(canvas);
-
-  const THEME = {
-    line: 0xcdc9d8, // Slightly cooler gray-lavender to match Figma
-    core: 0xf2f1f6,
-  };
-
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0xffffff, 0);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 100);
-  camera.position.set(0.7, -0.2, 12.8);
-  camera.lookAt(0, 0, 0);
-
+  canvas.classList.add("cancer-canvas"), (canvas.style.backgroundColor = "transparent"), container.appendChild(canvas);
+  const THEME = { line: 13486552, core: 15921654 },
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !0, alpha: !0 });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)), renderer.setClearColor(16777215, 0);
+  const scene = new THREE.Scene(),
+    camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 100);
   function resize() {
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+    const e = canvas.clientWidth,
+      a = canvas.clientHeight;
+    renderer.setSize(e, a), (camera.aspect = e / a), camera.updateProjectionMatrix();
   }
-  window.addEventListener("resize", resize);
-  resize();
-
-  // More visible core sphere
-  const coreGeom = new THREE.SphereGeometry(4.5, 32, 32);
-  const coreMat = new THREE.MeshBasicMaterial({ color: THEME.core, opacity: 0.14, transparent: true });
-  const core = new THREE.Mesh(coreGeom, coreMat);
-
-  // Dense wireframe with many more lines - single shell for cohesion
-  const wireGeom = new THREE.IcosahedronGeometry(5.2, 5);
-  const wireMat = new THREE.LineBasicMaterial({ color: THEME.line, transparent: true, opacity: 0.92 });
-  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(wireGeom), wireMat);
-
-  // More visible spikes
-  const spikes = new THREE.Group();
-  const SPIKE_COUNT = 240;
-  for (let i = 0; i < SPIKE_COUNT; i++) {
-    const dir = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
-    const length = 3.6 + Math.random() * 6.4;
-    const opacity = 0.62 + Math.random() * 0.18;
-    const spikeMat = new THREE.LineBasicMaterial({ color: THEME.line, transparent: true, opacity });
-    const inner = dir.clone().multiplyScalar(5.1);
-    const outer = dir.clone().multiplyScalar(5.1 + length);
-    const geom = new THREE.BufferGeometry().setFromPoints([inner, outer]);
-    geom.computeBoundingSphere();
-    const line = new THREE.Line(geom, spikeMat);
-    line.userData = { baseLength: length, phase: Math.random() * Math.PI * 2 };
-    spikes.add(line);
+  camera.position.set(0.7, -0.2, 12.8), camera.lookAt(0, 0, 0), window.addEventListener("resize", resize), resize();
+  const coreGeom = new THREE.SphereGeometry(4.5, 32, 32),
+    coreMat = new THREE.MeshBasicMaterial({ color: THEME.core, opacity: 0.14, transparent: !0 }),
+    core = new THREE.Mesh(coreGeom, coreMat),
+    wireGeom = new THREE.IcosahedronGeometry(5.2, 5),
+    wireMat = new THREE.LineBasicMaterial({ color: THEME.line, transparent: !0, opacity: 0.92 }),
+    wire = new THREE.LineSegments(new THREE.EdgesGeometry(wireGeom), wireMat),
+    spikes = new THREE.Group(),
+    SPIKE_COUNT = 240;
+  for (let e = 0; e < 240; e++) {
+    const e = new THREE.Vector3(2 * Math.random() - 1, 2 * Math.random() - 1, 2 * Math.random() - 1).normalize(),
+      a = 3.6 + 6.4 * Math.random(),
+      n = 0.62 + 0.18 * Math.random(),
+      r = new THREE.LineBasicMaterial({ color: THEME.line, transparent: !0, opacity: n }),
+      o = e.clone().multiplyScalar(5.1),
+      t = e.clone().multiplyScalar(5.1 + a),
+      i = new THREE.BufferGeometry().setFromPoints([o, t]);
+    i.computeBoundingSphere();
+    const s = new THREE.Line(i, r);
+    (s.userData = { baseLength: a, phase: Math.random() * Math.PI * 2 }), spikes.add(s);
   }
-
   const group = new THREE.Group();
-  group.add(core);
-  group.add(wire);
-  group.add(spikes);
-  group.position.set(1.56, -0.24, 0);
-  group.scale.set(1.02, 1.02, 1.02);
-  scene.add(group);
-
-  // Fade in canvas after first render
-  let isLoaded = false;
-  let isVisible = false;
-  let animationId = null;
-
-  // Visibility detection - pause animation when scrolled out of view
+  group.add(core), group.add(wire), group.add(spikes), group.position.set(1.56, -0.24, 0), group.scale.set(1.02, 1.02, 1.02), scene.add(group);
+  let isLoaded = !1,
+    isVisible = !1,
+    animationId = null;
   const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        isVisible = entry.isIntersecting;
-        if (isVisible && !animationId) {
-          t0 = performance.now(); // Reset time to avoid jumps
-          animate();
-        }
+    (e) => {
+      e.forEach((e) => {
+        (isVisible = e.isIntersecting), isVisible && !animationId && ((t0 = performance.now()), animate());
       });
     },
-    { threshold: 0, rootMargin: "50px" } // Start slightly before visible
+    { threshold: 0, rootMargin: "50px" }
   );
   observer.observe(canvas);
-
-  // Animation loop - gentle rotation only
   let t0 = performance.now();
   function animate() {
-    if (!isVisible) {
-      animationId = null;
-      return; // Stop loop when not visible
-    }
-
-    if (!isLoaded) {
-      canvas.classList.add("loaded");
-      isLoaded = true;
-    }
-    const t = performance.now();
-    const dt = (t - t0) / 1000;
-    t0 = t;
-    const time = t * 0.001;
-
-    // Slower, more subtle rotation
-    group.rotation.y += dt * 0.05;
-    group.rotation.x += dt * 0.02;
-
-    // Very subtle spike pulsing
-    spikes.children.forEach((line) => {
-      const s = 1 + Math.sin(time * 1.2 + line.userData.phase) * 0.03;
-      line.scale.set(s, s, s);
-    });
-
-    renderer.render(scene, camera);
-    animationId = requestAnimationFrame(animate);
+    if (!isVisible) return void (animationId = null);
+    isLoaded || (canvas.classList.add("loaded"), (isLoaded = !0));
+    const e = performance.now(),
+      a = (e - t0) / 1e3;
+    t0 = e;
+    const n = 0.001 * e;
+    (group.rotation.y += 0.05 * a),
+      (group.rotation.x += 0.02 * a),
+      spikes.children.forEach((e) => {
+        const a = 1 + 0.03 * Math.sin(1.2 * n + e.userData.phase);
+        e.scale.set(a, a, a);
+      }),
+      renderer.render(scene, camera),
+      (animationId = requestAnimationFrame(animate));
   }
-  // Initial start handled by observer when element becomes visible
 </script>
