@@ -110,7 +110,7 @@ async function processJSFile(filePath: string, outputPath: string): Promise<void
 }
 
 async function createGlobalBundle(): Promise<void> {
-  const globalFiles = ["orbs.js", "grainy-grain.js", "scroll-down.js"];
+  const globalFiles = ["nav-bg.js", "orbs.js", "grainy-grain.js", "scroll-down.js"];
   const bundledParts: string[] = [];
 
   for (const fileName of globalFiles) {
@@ -167,7 +167,7 @@ async function build(): Promise<void> {
   }
 
   // Files to exclude from individual processing (they'll be bundled into global.js)
-  const globalBundleFiles = new Set(["orbs.js", "grainy-grain.js", "scroll-down.js"]);
+  const globalBundleFiles = new Set(["nav-bg.js", "orbs.js", "grainy-grain.js", "scroll-down.js"]);
 
   // Process JS and CSS files from src/
   const srcFiles = await readdir(SRC_DIR);
