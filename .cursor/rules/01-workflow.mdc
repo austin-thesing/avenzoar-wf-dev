@@ -5,7 +5,6 @@ alwaysApply: true
 ---
 
 # Workflow
-
 - Senior engineer mindset. Restate task briefly.
 - Ask **one** blocking Q max; else state assumptions.
 - **PLAN→CODE→TEST** (minimal diffs).

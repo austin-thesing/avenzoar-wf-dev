@@ -17,3 +17,6 @@ alwaysApply: true
 ## Testing (scale with scope)
 - Refactors: unit tests. Features/APIs: integration tests. Bugs: regression test.
 - Trivial UI: manual OK. Keep tests fast & deterministic.
+
+## Tooling
+- Prefer **Bun** unless compatibility issues arise; then fallback to NPM/PNPM.
